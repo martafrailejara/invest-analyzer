@@ -1,0 +1,9 @@
+{
+  "scanned": "2026-07-12",
+  "framework": "Flask (server-rendered, Jinja2)",
+  "fonts": "ninguna previa — introducidas por Hallmark (Space Grotesk / Inter / JetBrains Mono)",
+  "palette": "ninguna previa — tokens OKLCH introducidos en app/static/tokens.css",
+  "motion": "motion-cut (sin librerías de animación)",
+  "spacing": "escala 4pt introducida por Hallmark",
+  "notes": "backend Python puro antes de esta pasada; Chart.js vendorizado en app/static/vendor/"
+}

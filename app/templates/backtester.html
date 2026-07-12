@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Backtester · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Backtester</h1>
+  <p>Simula una estrategia de inversión sobre precios históricos reales y mide su rendimiento y riesgo.</p>
+</div>
+
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Estrategia</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="activos">
+      {% for i in range(4) %}
+      <div class="activo-fila">
+        <div class="campo">
+          {% if loop.first %}<label for="ticker_{{ i }}">Activo (ticker yfinance) y peso %</label>{% endif %}
+          <input type="text" id="ticker_{{ i }}" name="ticker_{{ i }}"
+                 value="{{ form['ticker_' ~ i] }}" placeholder="SXR8.DE"
+                 autocomplete="off" spellcheck="false">
+        </div>
+        <div class="campo">
+          {% if loop.first %}<label for="peso_{{ i }}" aria-hidden="true">&nbsp;</label>{% endif %}
+          <input type="number" id="peso_{{ i }}" name="peso_{{ i }}"
+                 value="{{ form['peso_' ~ i] }}" placeholder="80" min="0" max="100" step="0.1"
+                 aria-label="Peso % del activo {{ i + 1 }}">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-grid">
+      <div class="campo">
+        <label for="inicial">Aportación inicial €</label>
+        <input type="number" id="inicial" name="inicial" value="{{ form['inicial'] }}" min="0" step="100">
+      </div>
+      <div class="campo">
+        <label for="mensual">Aportación mensual €</label>
+        <input type="number" id="mensual" name="mensual" value="{{ form['mensual'] }}" min="0" step="50">
+      </div>
+      <div class="campo">
+        <label for="start">Desde</label>
+        <input type="date" id="start" name="start" value="{{ form['start'] }}">
+      </div>
+      <div class="campo">
+        <label for="end">Hasta</label>
+        <input type="date" id="end" name="end" value="{{ form['end'] }}">
+      </div>
+      <div class="campo span-2">
+        <label for="rebalance">Rebalanceo a pesos objetivo</label>
+        <select id="rebalance" name="rebalance">
+          {% for valor, nombre in [('', 'Sin rebalanceo'), ('M', 'Mensual'), ('Q', 'Trimestral'), ('Y', 'Anual')] %}
+          <option value="{{ valor }}" {% if form['rebalance'] == valor %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+        <p class="ayuda">El primer día de negociación de cada periodo.</p>
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Ejecutar backtest</button>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if resultado %}
+      <div class="hero-figura">
+        <p class="etiqueta">Valor final · {{ resultado.fecha_final }}</p>
+        <p class="valor" data-countup="{{ resultado.final_raw }}">{{ resultado.final }}</p>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><p class="etiqueta">Total aportado</p><p class="valor">{{ resultado.aportado }}</p></div>
+        <div class="tile"><p class="etiqueta">Ganancia</p><p class="valor {% if resultado.profit_raw < 0 %}negativo{% endif %}">{{ resultado.ganancia }}</p></div>
+        <div class="tile"><p class="etiqueta">CAGR</p><p class="valor {% if resultado.cagr_raw < 0 %}negativo{% endif %}">{{ resultado.cagr }}</p></div>
+        <div class="tile"><p class="etiqueta">Volatilidad anual</p><p class="valor">{{ resultado.volatilidad }}</p></div>
+        <div class="tile"><p class="etiqueta">Sharpe</p><p class="valor">{{ resultado.sharpe }}</p></div>
+        <div class="tile"><p class="etiqueta">Máx. drawdown</p><p class="valor negativo">{{ resultado.drawdown }}</p></div>
+      </div>
+
+      <div class="grafico-card">
+        <div class="lienzo"><canvas id="grafico" role="img"
+          aria-label="Evolución del valor de la cartera frente al total aportado"></canvas></div>
+      </div>
+
+      <details class="tabla-anual">
+        <summary>Datos por año (cierre)</summary>
+        <table>
+          <thead><tr><th>Año</th><th>Valor cartera</th><th>Aportado</th></tr></thead>
+          <tbody>
+            {% for fila in resultado.tabla_anual %}
+            <tr><td>{{ fila.anio }}</td><td>{{ fila.valor }}</td><td>{{ fila.aportado }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+
+      {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    {% else %}
+      <div class="vacio">
+        <p>Configura la estrategia y pulsa <code>Ejecutar backtest</code>.<br>
+        Ejemplo cargado: 200 €/mes en 80 % S&amp;P 500 / 20 % IBEX 35 desde 2015, rebalanceo anual.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const eur = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // crosshair vertical que sigue al puntero (encuentra la X por ti)
+  const crosshair = {
+    id: "crosshair",
+    afterDraw(chart) {
+      const activos = chart.tooltip.getActiveElements();
+      if (!activos.length) return;
+      const x = activos[0].element.x;
+      const { top, bottom } = chart.chartArea;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = tok("--color-rule-2");
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
+  new Chart(document.getElementById("grafico"), {
+    type: "line",
+    plugins: [crosshair],
+    data: {
+      labels: datos.labels,
+      datasets: [
+        {
+          label: "Valor de la cartera",
+          data: datos.value,
+          borderColor: tok("--chart-value"),
+          backgroundColor: tok("--chart-value-wash"),
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-value"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          borderJoinStyle: "round",
+        },
+        {
+          label: "Total aportado",
+          data: datos.invested,
+          borderColor: tok("--chart-invested"),
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-invested"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          stepped: "before",
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: {
+          position: "top",
+          align: "start",
+          labels: {
+            usePointStyle: true, pointStyle: "line",
+            color: tok("--color-ink-2"),
+            font: { family: tok("--font-body"), size: 12 },
+          },
+        },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"),
+          bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10,
+          cornerRadius: 6,
+          usePointStyle: true,
+          boxPadding: 4,
+          callbacks: { label: (c) => " " + c.dataset.label + ": " + eur(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: tok("--chart-grid") },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            maxTicksLimit: 8, maxRotation: 0, autoSkip: true,
+          },
+        },
+        y: {
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            callback: (v) => eur(v),
+            maxTicksLimit: 6,
+          },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

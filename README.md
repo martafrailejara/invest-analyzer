@@ -45,6 +45,15 @@ El backtester puede probarse desde consola con el caso de ejemplo del proyecto (
 python scripts/demo_fase2.py
 ```
 
+O desde el navegador, con el dashboard Flask:
+
+```bash
+flask --app app run
+# http://127.0.0.1:5000 → formulario del backtester, gráfico y métricas
+```
+
+El dashboard navega entre los 5 módulos con ⌘K (paleta de comandos). El diseño usa tokens propios ([app/static/tokens.css](app/static/tokens.css)) y Chart.js vendorizado en local.
+
 ## Estado
 
-En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted). Siguiente: Fase 3 (dashboard Flask + UI del backtester).
+En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted), Fase 3 (dashboard Flask con la página del backtester funcional). Siguiente: Fase 4 (simulador qué-pasaría-si).
