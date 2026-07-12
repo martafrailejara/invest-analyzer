@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Simulador · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Simulador qué-pasaría-si</h1>
+  <p>Compara dos o tres escenarios de inversión sobre el mismo periodo, con el mismo motor del backtester.</p>
+</div>
+
+<form method="post" id="form-backtest" novalidate>
+  {% if errores %}
+  <div class="alert" role="alert">
+    <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <div class="sim-global">
+    <div class="campo">
+      <label for="start">Desde</label>
+      <input type="date" id="start" name="start" value="{{ form['start'] }}">
+    </div>
+    <div class="campo">
+      <label for="end">Hasta</label>
+      <input type="date" id="end" name="end" value="{{ form['end'] }}">
+    </div>
+    <button class="btn btn--primary" type="submit">Comparar escenarios</button>
+  </div>
+
+  <div class="escenarios">
+    {% for letra in ['a', 'b', 'c'] %}
+    <fieldset class="panel esc-panel esc-{{ letra }}">
+      <legend><span class="swatch swatch-{{ letra }}" aria-hidden="true"></span>Escenario {{ letra | upper }}{% if letra == 'c' %} · opcional{% endif %}</legend>
+      <div class="campo">
+        <label for="nombre_{{ letra }}">Nombre</label>
+        <input type="text" id="nombre_{{ letra }}" name="nombre_{{ letra }}"
+               value="{{ form['nombre_' ~ letra] }}" placeholder="Escenario {{ letra | upper }}">
+      </div>
+      {% for i in range(2) %}
+      <div class="activo-fila">
+        <div class="campo">
+          {% if loop.first %}<label for="ticker_{{ letra }}_{{ i }}">Activo y peso %</label>{% endif %}
+          <input type="text" id="ticker_{{ letra }}_{{ i }}" name="ticker_{{ letra }}_{{ i }}"
+                 value="{{ form['ticker_' ~ letra ~ '_' ~ i] }}" placeholder="SXR8.DE"
+                 autocomplete="off" spellcheck="false">
+        </div>
+        <div class="campo">
+          {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}
+          <input type="number" name="peso_{{ letra }}_{{ i }}" value="{{ form['peso_' ~ letra ~ '_' ~ i] }}"
+                 placeholder="100" min="0" max="100" step="0.1"
+                 aria-label="Peso % del activo {{ i + 1 }} del escenario {{ letra | upper }}">
+        </div>
+      </div>
+      {% endfor %}
+      <div class="campo">
+        <label for="inicial_{{ letra }}">Aportación inicial €</label>
+        <input type="number" id="inicial_{{ letra }}" name="inicial_{{ letra }}"
+               value="{{ form['inicial_' ~ letra] }}" min="0" step="100">
+      </div>
+      <div class="campo">
+        <label for="mensual_{{ letra }}">Aportación mensual €</label>
+        <input type="text" inputmode="decimal" id="mensual_{{ letra }}" name="mensual_{{ letra }}"
+               value="{{ form['mensual_' ~ letra] }}">
+      </div>
+      <div class="campo">
+        <label for="rebalance_{{ letra }}">Rebalanceo</label>
+        <select id="rebalance_{{ letra }}" name="rebalance_{{ letra }}">
+          {% for valor, nombre in [('', 'Sin rebalanceo'), ('M', 'Mensual'), ('Q', 'Trimestral'), ('Y', 'Anual')] %}
+          <option value="{{ valor }}" {% if form['rebalance_' ~ letra] == valor %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </fieldset>
+    {% endfor %}
+  </div>
+</form>
+
+{% if resultado %}
+<section class="resultados" aria-live="polite">
+  <div class="grafico-card">
+    <div class="lienzo"><canvas id="grafico" role="img"
+      aria-label="Comparación de la evolución del valor de cada escenario"></canvas></div>
+  </div>
+
+  <table class="tabla-comp">
+    <thead>
+      <tr>
+        <th>Métrica</th>
+        {% for col in resultado.columnas %}
+        <th><span class="swatch swatch-{{ col.letra }}" aria-hidden="true"></span>{{ col.nombre }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for clave, nombre in resultado.metricas %}
+      <tr>
+        <td>{{ nombre }}</td>
+        {% for col in resultado.columnas %}<td>{{ col[clave] }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+</section>
+{% else %}
+<section class="vacio">
+  <p>Define los escenarios y pulsa <code>Comparar escenarios</code>.<br>
+  Ejemplo cargado: 10.000 € de golpe frente a repartirlos en DCA durante 12 meses.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const eur = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const crosshair = {
+    id: "crosshair",
+    afterDraw(chart) {
+      const activos = chart.tooltip.getActiveElements();
+      if (!activos.length) return;
+      const x = activos[0].element.x;
+      const { top, bottom } = chart.chartArea;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = tok("--color-rule-2");
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
+  new Chart(document.getElementById("grafico"), {
+    type: "line",
+    plugins: [crosshair],
+    data: {
+      labels: datos.labels,
+      datasets: datos.series.map((s) => ({
+        label: s.nombre,
+        data: s.values,
+        borderColor: tok(s.token),
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: tok(s.token),
+        pointHoverBorderColor: tok("--color-paper"),
+        pointHoverBorderWidth: 2,
+        borderJoinStyle: "round",
+        spanGaps: true,
+      })),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: {
+          position: "top",
+          align: "start",
+          labels: {
+            usePointStyle: true, pointStyle: "line",
+            color: tok("--color-ink-2"),
+            font: { family: tok("--font-body"), size: 12 },
+          },
+        },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"),
+          bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10,
+          cornerRadius: 6,
+          usePointStyle: true,
+          boxPadding: 4,
+          callbacks: { label: (c) => " " + c.dataset.label + ": " + eur(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: tok("--chart-grid") },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            maxTicksLimit: 8, maxRotation: 0, autoSkip: true,
+          },
+        },
+        y: {
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            callback: (v) => eur(v),
+            maxTicksLimit: 6,
+          },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

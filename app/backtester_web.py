@@ -8,6 +8,7 @@ from datetime import date
 
 from flask import Blueprint, render_template, request
 
+from app.form_utils import eur, parsea_activos, parsea_fechas, parsea_importe, parsea_rebalanceo, pct
 from modules import backtester as motor
 
 backtester = Blueprint("backtester", __name__)
@@ -25,75 +26,24 @@ FORM_POR_DEFECTO = {
 }
 
 
-def _eur(v: float) -> str:
-    entero, decimales = f"{v:,.2f}".split(".")
-    return entero.replace(",", ".") + "," + decimales + " €"
-
-
-def _pct(v: float) -> str:
-    if math.isnan(v):
-        return "—"
-    return f"{v * 100:.2f}".replace(".", ",") + " %"
-
-
 def _parsea(form) -> tuple[dict, list[str]]:
-    """Valida el formulario; devuelve (parámetros, errores). Sin excepciones a medias."""
+    """Valida el formulario; devuelve (parámetros, errores)."""
     errores: list[str] = []
-    pesos: dict[str, float] = {}
-    for i in range(4):
-        ticker = form.get(f"ticker_{i}", "").strip().upper()
-        peso_txt = form.get(f"peso_{i}", "").strip()
-        if not ticker and not peso_txt:
-            continue
-        if not ticker or not peso_txt:
-            errores.append(f"La fila {i + 1} de activos necesita ticker y peso.")
-            continue
-        try:
-            peso = float(peso_txt.replace(",", "."))
-        except ValueError:
-            errores.append(f"El peso de {ticker} no es un número.")
-            continue
-        if peso <= 0:
-            errores.append(f"El peso de {ticker} debe ser mayor que 0.")
-            continue
-        pesos[ticker] = pesos.get(ticker, 0) + peso
-
-    if not pesos:
-        errores.append("Indica al menos un activo con su peso.")
-    elif abs(sum(pesos.values()) - 100) > 0.01:
-        errores.append(f"Los pesos deben sumar 100 (suman {sum(pesos.values()):g}).")
-
-    def _importe(campo: str, nombre: str) -> float:
-        txt = form.get(campo, "").strip() or "0"
-        try:
-            v = float(txt.replace(",", "."))
-        except ValueError:
-            errores.append(f"La {nombre} no es un número.")
-            return 0.0
-        if v < 0:
-            errores.append(f"La {nombre} no puede ser negativa.")
-        return v
-
-    inicial = _importe("inicial", "aportación inicial")
-    mensual = _importe("mensual", "aportación mensual")
+    weights = parsea_activos(
+        [(form.get(f"ticker_{i}", ""), form.get(f"peso_{i}", "")) for i in range(4)],
+        errores,
+    )
+    inicial = parsea_importe(form.get("inicial", ""), "aportación inicial", errores)
+    mensual = parsea_importe(form.get("mensual", ""), "aportación mensual", errores)
     if not errores and inicial == 0 and mensual == 0:
         errores.append("Alguna aportación (inicial o mensual) debe ser mayor que 0.")
-
-    start, end = form.get("start", ""), form.get("end", "")
-    try:
-        if date.fromisoformat(start) >= date.fromisoformat(end):
-            errores.append("La fecha inicial debe ser anterior a la final.")
-    except ValueError:
-        errores.append("Fechas incompletas o con formato incorrecto.")
-
-    rebalance = form.get("rebalance", "") or None
-    if rebalance not in (None, "M", "Q", "Y"):
-        errores.append("Frecuencia de rebalanceo no reconocida.")
+    parsea_fechas(form.get("start", ""), form.get("end", ""), errores)
+    rebalance = parsea_rebalanceo(form.get("rebalance", ""), errores)
 
     params = {
-        "weights": {t: p / 100 for t, p in pesos.items()},
-        "start": start,
-        "end": end,
+        "weights": weights,
+        "start": form.get("start", ""),
+        "end": form.get("end", ""),
         "initial_investment": inicial,
         "monthly_contribution": mensual,
         "rebalance_freq": rebalance,
@@ -106,24 +56,24 @@ def _prepara_resultado(res) -> dict:
     cierre_anual = res.value.groupby(res.value.index.year).last()
     aportado_anual = res.invested.groupby(res.invested.index.year).last()
     return {
-        "final": _eur(m["final_value"]),
+        "final": eur(m["final_value"]),
         "final_raw": round(m["final_value"], 2),
         "fecha_final": res.value.index[-1].strftime("%d-%m-%Y"),
-        "aportado": _eur(m["total_invested"]),
-        "ganancia": _eur(m["profit"]),
+        "aportado": eur(m["total_invested"]),
+        "ganancia": eur(m["profit"]),
         "profit_raw": m["profit"],
-        "cagr": _pct(m["cagr"]),
+        "cagr": pct(m["cagr"]),
         "cagr_raw": m["cagr"],
-        "volatilidad": _pct(m["volatility"]),
+        "volatilidad": pct(m["volatility"]),
         "sharpe": "—" if math.isnan(m["sharpe"]) else f"{m['sharpe']:.2f}".replace(".", ","),
-        "drawdown": _pct(m["max_drawdown"]),
+        "drawdown": pct(m["max_drawdown"]),
         "chart": {
             "labels": [d.strftime("%Y-%m-%d") for d in res.value.index],
             "value": [round(v, 2) for v in res.value.tolist()],
             "invested": [round(v, 2) for v in res.invested.tolist()],
         },
         "tabla_anual": [
-            {"anio": int(anio), "valor": _eur(cierre_anual[anio]), "aportado": _eur(aportado_anual[anio])}
+            {"anio": int(anio), "valor": eur(cierre_anual[anio]), "aportado": eur(aportado_anual[anio])}
             for anio in cierre_anual.index
         ],
     }

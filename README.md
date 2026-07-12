@@ -56,4 +56,4 @@ El dashboard navega entre los 5 módulos con ⌘K (paleta de comandos). El dise�
 
 ## Estado
 
-En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted), Fase 3 (dashboard Flask con la página del backtester funcional). Siguiente: Fase 4 (simulador qué-pasaría-si).
+En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted), Fase 3 (dashboard Flask con la página del backtester funcional), Fase 4 (simulador qué-pasaría-si con 2-3 escenarios comparados). Siguiente: Fase 5 (optimizador de cartera).

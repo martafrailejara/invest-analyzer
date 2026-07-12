@@ -16,7 +16,7 @@
       <nav class="nav__links" aria-label="Módulos">
         {% for url, nombre in [
           (url_for('backtester.page'), 'Backtester'),
-          (url_for('pages.modulo', nombre='simulador'), 'Simulador'),
+          (url_for('simulator.page'), 'Simulador'),
           (url_for('pages.modulo', nombre='optimizador'), 'Optimizador'),
           (url_for('pages.modulo', nombre='dividendos'), 'Dividendos'),
           (url_for('pages.modulo', nombre='anomalias'), 'Anomalías'),
@@ -40,7 +40,7 @@
       </div>
       <div class="cmdk__results">
         <button class="cmdk__item is-active" data-href="{{ url_for('backtester.page') }}">Backtester <span class="estado">activo</span></button>
-        <button class="cmdk__item" data-href="{{ url_for('pages.modulo', nombre='simulador') }}">Simulador qué-pasaría-si <span class="estado">fase 4</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('simulator.page') }}">Simulador qué-pasaría-si <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('pages.modulo', nombre='optimizador') }}">Optimizador de cartera <span class="estado">fase 5</span></button>
         <button class="cmdk__item" data-href="{{ url_for('pages.modulo', nombre='dividendos') }}">Agregador de dividendos <span class="estado">fase 6</span></button>
         <button class="cmdk__item" data-href="{{ url_for('pages.modulo', nombre='anomalias') }}">Detector de anomalías <span class="estado">fase 7</span></button>

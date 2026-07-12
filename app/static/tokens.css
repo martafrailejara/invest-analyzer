@@ -28,6 +28,11 @@
   --chart-grid:       oklch(93% 0.005 250);
   --chart-value-wash: oklch(58% 0.20 256 / 0.08);
 
+  /* escenarios del simulador — triple validada (CVD ΔE mín. 24.7, orden fijo) */
+  --chart-esc-a: oklch(58% 0.20 256);  /* #0076ed cobalto */
+  --chart-esc-b: oklch(52% 0.13 300);  /* #7555a8 violeta */
+  --chart-esc-c: oklch(52% 0.12 160);  /* #007d50 verde */
+
   /* tipografía — Space Grotesk display · Inter cuerpo · JetBrains Mono cifras/etiquetas */
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body:    "Inter", ui-sans-serif, system-ui, sans-serif;

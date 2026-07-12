@@ -213,6 +213,32 @@ a { color: inherit; }
          padding: var(--space-2xl) var(--space-lg); text-align: center; color: var(--color-muted); }
 .vacio code { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-ink-2); }
 
+/* ---------- Simulador ---------- */
+.sim-global { display: flex; gap: var(--space-md); align-items: end; flex-wrap: wrap;
+              margin-bottom: var(--space-lg); }
+.sim-global .campo { min-width: 10rem; }
+.sim-global .btn--primary { width: auto; margin-top: 0; }
+.escenarios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+              gap: var(--space-lg); margin-bottom: var(--space-xl); }
+.esc-panel { display: flex; flex-direction: column; gap: var(--space-sm); margin: 0; }
+.esc-panel legend { padding: 0 var(--space-2xs); }
+
+.tabla-comp { width: 100%; border-collapse: collapse; font-size: var(--text-sm);
+              font-variant-numeric: tabular-nums; }
+.tabla-comp th { text-align: right; font-family: var(--font-mono); font-size: var(--text-xs);
+                 text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
+                 color: var(--color-muted); padding: var(--space-xs) var(--space-sm);
+                 border-bottom: 1px solid var(--color-rule-2); }
+.tabla-comp th:first-child { text-align: left; }
+.tabla-comp td { padding: var(--space-xs) var(--space-sm); border-bottom: 1px solid var(--color-rule);
+                 font-family: var(--font-mono); color: var(--color-ink-2); text-align: right; }
+.tabla-comp td:first-child { font-family: var(--font-body); text-align: left; }
+.swatch { display: inline-block; width: 1rem; height: 2px; vertical-align: middle;
+          margin-right: var(--space-2xs); }
+.swatch-a { background: var(--chart-esc-a); }
+.swatch-b { background: var(--chart-esc-b); }
+.swatch-c { background: var(--chart-esc-c); }
+
 /* módulos pendientes */
 .pendiente { max-width: 48ch; }
 .pendiente .fase { font-family: var(--font-mono); font-size: var(--text-xs);
@@ -229,6 +255,8 @@ a { color: inherit; }
 /* ---------- Responsive ---------- */
 @media (max-width: 60rem) {
   .workbench { grid-template-columns: minmax(0, 1fr); }
+  .escenarios { grid-template-columns: minmax(0, 1fr); }
+  .tabla-comp { display: block; overflow-x: auto; }
   .searchpill .searchpill__text { display: none; }
 }
 @media (max-width: 40rem) {
