@@ -1,0 +1,4 @@
+# Todo el contenido de data/ queda fuera del repo (datos personales y caché),
+# pero este archivo se versiona para que la carpeta exista al clonar.
+*
+!.gitignore

@@ -1,0 +1,11 @@
+# Entorno
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# El contenido de data/ (datos personales y caché) se excluye vía data/.gitignore
+
+# Sistema / editor
+.DS_Store
+.env

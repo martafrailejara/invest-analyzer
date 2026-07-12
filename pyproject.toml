@@ -1,0 +1,9 @@
+[project]
+name = "invest-analyzer"
+version = "0.1.0"
+description = "Plataforma de análisis y simulación de estrategias de inversión (Flask + pandas)"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
