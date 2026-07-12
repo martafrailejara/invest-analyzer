@@ -39,6 +39,12 @@ python scripts/demo_fase1.py
 
 Los ISINs del export se traducen a tickers de yfinance en `core/isin_map.py`; al incorporar un activo nuevo a la cartera hay que añadir ahí su mapeo.
 
+El backtester puede probarse desde consola con el caso de ejemplo del proyecto (200€/mes en 80/20 S&P 500 / IBEX 35 desde 2015, rebalanceo anual):
+
+```bash
+python scripts/demo_fase2.py
+```
+
 ## Estado
 
-En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic). Siguiente: Fase 2 (motor de cálculo + backtester).
+En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted). Siguiente: Fase 3 (dashboard Flask + UI del backtester).
