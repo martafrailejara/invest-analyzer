@@ -30,6 +30,15 @@ pip install -r requirements.txt
 pytest
 ```
 
+Para probar la capa de datos con datos reales (descarga de yfinance + cartera propia):
+
+```bash
+# opcional: guarda tu export de Trade Republic en data/transacciones.csv
+python scripts/demo_fase1.py
+```
+
+Los ISINs del export se traducen a tickers de yfinance en `core/isin_map.py`; al incorporar un activo nuevo a la cartera hay que añadir ahí su mapeo.
+
 ## Estado
 
-En construcción por fases. Completado: Fase 0 (esqueleto). Siguiente: Fase 1 (capa de datos).
+En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic). Siguiente: Fase 2 (motor de cálculo + backtester).
