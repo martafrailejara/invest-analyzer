@@ -19,12 +19,13 @@ FORM_POR_DEFECTO = {
     "ticker_1": "LYXIB.MC",
     "ticker_2": "BTC-EUR",
     "ticker_3": "",
+    "vol_objetivo": "15",
     "start": "2020-01-01",
     "end": date.today().isoformat(),
 }
 
 
-def _parsea(form) -> tuple[list[str], str, str, list[str], list[str]]:
+def _parsea(form):
     errores: list[str] = []
     avisos: list[str] = []
     tickers: list[str] = []
@@ -34,9 +35,18 @@ def _parsea(form) -> tuple[list[str], str, str, list[str], list[str]]:
             tickers.append(ticker)
     if len(tickers) < 2:
         errores.append("Indica al menos dos activos distintos para optimizar.")
+    vol_objetivo = None
+    vol_txt = (form.get("vol_objetivo", "") or "").strip()
+    if vol_txt:
+        try:
+            vol_objetivo = float(vol_txt.replace(",", ".")) / 100
+            if not 0 < vol_objetivo < 2:
+                errores.append("La volatilidad objetivo debe estar entre 0 y 200 %.")
+        except ValueError:
+            errores.append("La volatilidad objetivo no es un número.")
     start = form.get("start", "")
     end = parsea_fechas(start, form.get("end", ""), errores, avisos)
-    return tickers, start, end, errores, avisos
+    return tickers, vol_objetivo, start, end, errores, avisos
 
 
 def _pesos_texto(weights: dict) -> str:
@@ -65,7 +75,19 @@ def _prepara(res: dict) -> dict:
             if res[clave] is not None
         ],
     }
+    perfil = None
+    if res.get("objetivo_riesgo"):
+        o = res["objetivo_riesgo"]
+        perfil = {
+            "target": pct(o["target"]),
+            "alcanzable": o["alcanzable"],
+            "vol_minima": pct(o["vol_minima"]) if not o["alcanzable"] else None,
+            "ret": pct(o["ret"]),
+            "vol": pct(o["vol"]),
+            "pesos": _pesos_texto(o["weights"]),
+        }
     return {
+        "perfil": perfil,
         "chart": {
             "frontera": [punto(p) for p in res["frontera"]],
             "activos": [
@@ -90,13 +112,13 @@ def page():
         return render_template("optimizador.html", form=FORM_POR_DEFECTO, resultado=None, errores=[], avisos=[])
 
     form = {campo: request.form.get(campo, "") for campo in FORM_POR_DEFECTO}
-    tickers, start, end, errores, avisos = _parsea(request.form)
+    tickers, vol_objetivo, start, end, errores, avisos = _parsea(request.form)
     resultado = None
     if not errores:
         try:
             with warnings.catch_warnings(record=True) as capturados:
                 warnings.simplefilter("always")
-                res = motor.run(tickers, start, end)
+                res = motor.run(tickers, start, end, target_vol=vol_objetivo)
             avisos = avisos + sorted({str(w.message) for w in capturados})
             resultado = _prepara(res)
         except ValueError as exc:

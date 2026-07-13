@@ -25,7 +25,8 @@ def motor_falso(monkeypatch):
                 for k in range(300)]
             for i, t in enumerate(tickers)
         }, index=fechas)
-        return optimizer.efficient_frontier(precios, n_points=10)
+        return optimizer.efficient_frontier(precios, n_points=10,
+                                            target_vol=kwargs.get("target_vol"))
 
     monkeypatch.setattr(optimizer, "run", run_falso)
 
@@ -64,3 +65,14 @@ def test_post_activos_duplicados_cuentan_una_vez(client, motor_falso):
     datos = dict(FORM_VALIDO, ticker_1="AAA")
     r = client.post("/optimizador", data=datos)
     assert "al menos dos activos" in r.get_data(as_text=True)
+
+
+def test_post_con_volatilidad_objetivo(client, motor_falso):
+    r = client.post("/optimizador", data=dict(FORM_VALIDO, vol_objetivo="15"))
+    html = r.get_data(as_text=True)
+    assert "Con volatilidad" in html or "no alcanzable" in html
+
+
+def test_post_volatilidad_objetivo_invalida(client, motor_falso):
+    r = client.post("/optimizador", data=dict(FORM_VALIDO, vol_objetivo="abc"))
+    assert "no es un número" in r.get_data(as_text=True)

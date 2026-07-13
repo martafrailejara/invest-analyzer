@@ -72,3 +72,25 @@ def test_historico_insuficiente():
 def test_run_exige_dos_activos(tmp_path):
     with pytest.raises(ValueError, match="al menos dos activos"):
         optimizer.run(["AAA"], "2024-01-01", "2024-12-31", cache_dir=tmp_path)
+
+
+def test_cartera_para_volatilidad_objetivo():
+    rng = np.random.default_rng(7)
+    retornos = {t: list(rng.normal(m, s, 300)) for t, m, s in
+                [("A", 0.0006, 0.010), ("B", 0.0004, 0.014), ("C", 0.0002, 0.006)]}
+    px = precios_desde_retornos(retornos)
+    res = optimizer.efficient_frontier(px, target_vol=0.15)
+    o = res["objetivo_riesgo"]
+    assert o["alcanzable"]
+    assert o["vol"] <= 0.15 + 1e-6           # respeta el techo de riesgo
+    assert o["ret"] >= res["min_var"]["ret"] - 1e-9  # y no rinde menos que la mínima varianza
+    assert sum(o["weights"].values()) == pytest.approx(1.0, abs=1e-3)
+
+
+def test_volatilidad_objetivo_inalcanzable():
+    rng = np.random.default_rng(7)
+    retornos = {t: list(rng.normal(0.0005, 0.012, 300)) for t in ("A", "B")}
+    res = optimizer.efficient_frontier(precios_desde_retornos(retornos), target_vol=0.001)
+    o = res["objetivo_riesgo"]
+    assert not o["alcanzable"]
+    assert o["vol_minima"] > 0.001

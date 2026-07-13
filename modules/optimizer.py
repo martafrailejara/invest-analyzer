@@ -24,6 +24,7 @@ def run(
     *,
     n_points: int = 25,
     risk_free_annual: float = 0.0,
+    target_vol: float | None = None,
     cache_dir=None,
     downloader=None,
 ) -> dict:
@@ -32,7 +33,8 @@ def run(
         raise ValueError("El optimizador necesita al menos dos activos distintos")
     prices = market_data.get_prices(list(dict.fromkeys(tickers)), start, end,
                                     cache_dir=cache_dir, downloader=downloader)
-    return efficient_frontier(prices, n_points=n_points, risk_free_annual=risk_free_annual)
+    return efficient_frontier(prices, n_points=n_points,
+                               risk_free_annual=risk_free_annual, target_vol=target_vol)
 
 
 def efficient_frontier(
@@ -40,8 +42,13 @@ def efficient_frontier(
     *,
     n_points: int = 25,
     risk_free_annual: float = 0.0,
+    target_vol: float | None = None,
 ) -> dict:
     """Frontera eficiente, cartera de mínima varianza y de máximo Sharpe.
+
+    Con ``target_vol`` (volatilidad anual, p. ej. 0.15) añade la cartera de
+    máximo retorno histórico cuya volatilidad no supera ese objetivo — la
+    lectura "con este riesgo, qué retorno tuvo la mejor combinación".
 
     Restricciones: pesos entre 0 y 1 (sin cortos) que suman 1.
     Retornos y covarianza anualizados con 252 sesiones/año.
@@ -104,10 +111,28 @@ def efficient_frontier(
         if w is not None:
             frontera.append(como_punto(w))
 
+    objetivo_riesgo = None
+    if target_vol is not None:
+        if target_vol <= 0:
+            raise ValueError("La volatilidad objetivo debe ser mayor que 0")
+        vol_minima = volatilidad(w_min_var)
+        if target_vol < vol_minima - 1e-9:
+            # ninguna combinación baja de la mínima varianza: se informa del suelo
+            objetivo_riesgo = {"target": target_vol, "alcanzable": False,
+                               "vol_minima": vol_minima, **como_punto(w_min_var)}
+        else:
+            w = optimiza(
+                lambda w: -(w @ mu),
+                [suma_1, {"type": "ineq", "fun": lambda w: target_vol**2 - w @ cov @ w}],
+            )
+            if w is not None:
+                objetivo_riesgo = {"target": target_vol, "alcanzable": True, **como_punto(w)}
+
     return {
         "frontera": frontera,
         "min_var": como_punto(w_min_var),
         "max_sharpe": como_punto(w_max_sharpe) if w_max_sharpe is not None else None,
+        "objetivo_riesgo": objetivo_riesgo,
         "activos": [
             {"ticker": t, "ret": float(mu[i]), "vol": float(np.sqrt(cov[i, i]))}
             for i, t in enumerate(tickers)
