@@ -75,7 +75,7 @@ def test_run_con_downloader(tmp_path):
     def downloader(ticker, start, end):
         return serie_con_ruido(200, caida_en=150)
 
-    res = anomalies.run("AAA", "2024-01-01", "2024-12-31",
+    res = anomalies.run("AAA.DE", "2024-01-01", "2024-12-31",
                         cache_dir=tmp_path, downloader=downloader)
     assert len(res["eventos"]) >= 1
 

@@ -127,7 +127,7 @@ def test_backtester_modulo_usa_capa_de_datos(tmp_path):
         return pd.Series([100.0 + i for i in range(len(fechas))], index=fechas)
 
     res = backtester.run(
-        {"AAA": 1.0}, "2024-01-01", "2024-02-01",
+        {"AAA.DE": 1.0}, "2024-01-01", "2024-02-01",
         initial_investment=1000,
         cache_dir=tmp_path, downloader=downloader,
     )

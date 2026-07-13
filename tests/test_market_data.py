@@ -25,10 +25,10 @@ def dividendos_contados(contador, serie):
 
 def test_get_prices_estructura(tmp_path):
     df = market_data.get_prices(
-        ["AAA", "BBB"], "2024-01-01", "2024-02-01",
+        ["AAA.DE", "BBB.DE"], "2024-01-01", "2024-02-01",
         cache_dir=tmp_path, downloader=downloader_contado({}),
     )
-    assert list(df.columns) == ["AAA", "BBB"]
+    assert list(df.columns) == ["AAA.DE", "BBB.DE"]
     assert isinstance(df.index, pd.DatetimeIndex)
     assert df.index.min() >= pd.Timestamp("2024-01-01")
     assert df.index.max() <= pd.Timestamp("2024-02-01")
@@ -39,30 +39,30 @@ def test_get_prices_segunda_llamada_sale_de_cache(tmp_path):
     contador = {}
     args = dict(cache_dir=tmp_path, downloader=downloader_contado(contador))
 
-    df1 = market_data.get_prices(["AAA"], "2024-01-01", "2024-02-01", **args)
-    assert contador == {"AAA": 1}
+    df1 = market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-02-01", **args)
+    assert contador == {"AAA.DE": 1}
 
-    df2 = market_data.get_prices(["AAA"], "2024-01-01", "2024-02-01", **args)
-    assert contador == {"AAA": 1}  # sin descargas nuevas
+    df2 = market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-02-01", **args)
+    assert contador == {"AAA.DE": 1}  # sin descargas nuevas
     pd.testing.assert_frame_equal(df1, df2, check_freq=False)
 
     # un subrango tambien se sirve de cache
-    market_data.get_prices(["AAA"], "2024-01-10", "2024-01-20", **args)
-    assert contador == {"AAA": 1}
+    market_data.get_prices(["AAA.DE"], "2024-01-10", "2024-01-20", **args)
+    assert contador == {"AAA.DE": 1}
 
 
 def test_get_prices_amplia_cache_si_desborda_rango(tmp_path):
     contador = {}
     args = dict(cache_dir=tmp_path, downloader=downloader_contado(contador))
 
-    market_data.get_prices(["AAA"], "2024-01-01", "2024-02-01", **args)
-    df = market_data.get_prices(["AAA"], "2024-01-01", "2024-06-01", **args)
-    assert contador == {"AAA": 2}
+    market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-02-01", **args)
+    df = market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-06-01", **args)
+    assert contador == {"AAA.DE": 2}
     assert df.index.max() > pd.Timestamp("2024-05-01")
 
     # tras ampliar, el rango grande ya esta cubierto
-    market_data.get_prices(["AAA"], "2024-01-01", "2024-06-01", **args)
-    assert contador == {"AAA": 2}
+    market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-06-01", **args)
+    assert contador == {"AAA.DE": 2}
 
 
 def test_get_prices_ticker_sin_datos(tmp_path):
@@ -70,13 +70,13 @@ def test_get_prices_ticker_sin_datos(tmp_path):
         return pd.Series(dtype="float64")
 
     with pytest.raises(ValueError, match="no devolvió datos"):
-        market_data.get_prices(["MALO"], "2024-01-01", "2024-02-01",
+        market_data.get_prices(["MALO.DE"], "2024-01-01", "2024-02-01",
                                cache_dir=tmp_path, downloader=vacio)
 
 
 def test_get_prices_rango_invalido(tmp_path):
     with pytest.raises(ValueError, match="Rango de fechas inválido"):
-        market_data.get_prices(["AAA"], "2024-02-01", "2024-01-01",
+        market_data.get_prices(["AAA.DE"], "2024-02-01", "2024-01-01",
                                cache_dir=tmp_path, downloader=downloader_contado({}))
 
 

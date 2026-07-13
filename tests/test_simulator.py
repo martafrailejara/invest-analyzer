@@ -14,9 +14,9 @@ def downloader_sintetico(ticker, start, end):
 
 
 ESCENARIOS = [
-    Scenario("Aportación única", {"AAA": 1.0}, initial_investment=10000),
-    Scenario("DCA 12 meses", {"AAA": 1.0}, monthly_contribution=833.33),
-    Scenario("Mixto 60/40", {"AAA": 0.6, "BBB": 0.4}, initial_investment=5000,
+    Scenario("Aportación única", {"AAA.DE": 1.0}, initial_investment=10000),
+    Scenario("DCA 12 meses", {"AAA.DE": 1.0}, monthly_contribution=833.33),
+    Scenario("Mixto 60/40", {"AAA.DE": 0.6, "BBB.DE": 0.4}, initial_investment=5000,
              monthly_contribution=100, rebalance_freq="Q"),
 ]
 
