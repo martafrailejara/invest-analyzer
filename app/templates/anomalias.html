@@ -22,6 +22,13 @@
         <input type="text" id="ticker" name="ticker" value="{{ form['ticker'] }}"
                placeholder="SXR8.DE" autocomplete="off" spellcheck="false">
       </div>
+      <div class="campo span-2">
+        <label for="method">Método</label>
+        <select id="method" name="method">
+          <option value="zscore" {% if form['method'] == 'zscore' %}selected{% endif %}>z-score (estadístico)</option>
+          <option value="iforest" {% if form['method'] == 'iforest' %}selected{% endif %}>Isolation Forest (machine learning)</option>
+        </select>
+      </div>
       <div class="campo">
         <label for="start">Desde</label>
         <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
@@ -35,9 +42,14 @@
         <input type="number" id="window" name="window" value="{{ form['window'] }}" min="10" step="5">
       </div>
       <div class="campo">
-        <label for="threshold">Umbral (desviaciones)</label>
+        <label for="threshold">Umbral (z-score)</label>
         <input type="text" inputmode="decimal" id="threshold" name="threshold" value="{{ form['threshold'] }}">
-        <p class="ayuda">|z| &gt; umbral marca el día como anómalo.</p>
+        <p class="ayuda">Solo z-score: |z| &gt; umbral.</p>
+      </div>
+      <div class="campo">
+        <label for="contamination">Sensibilidad % (ML)</label>
+        <input type="text" inputmode="decimal" id="contamination" name="contamination" value="{{ form['contamination'] }}">
+        <p class="ayuda">Solo Isolation Forest: % de días a marcar.</p>
       </div>
     </div>
 
@@ -56,17 +68,20 @@
         <div class="lienzo"><canvas id="grafico" role="img"
           aria-label="Precio con los días anómalos marcados y bandas de Bollinger"></canvas></div>
       </div>
-      <p class="notice">Ventana de {{ resultado.window }} sesiones, umbral de {{ resultado.threshold }} desviaciones.
+      <p class="notice">
+      {% if resultado.method == 'zscore' %}Método z-score · ventana de {{ resultado.window }} sesiones · umbral {{ resultado.threshold }} σ.
+      {% else %}Método Isolation Forest · features (retorno, volatilidad de {{ resultado.window }} sesiones) · sensibilidad {{ resultado.contamination }} %.
+      {% endif %}
       Las bandas sombreadas son Bollinger (media ± 2σ, 20 sesiones), solo referencia visual.</p>
 
       {% if resultado.eventos %}
       <details class="tabla-anual" open>
         <summary>Los {{ resultado.n_eventos }} eventos detectados</summary>
         <table>
-          <thead><tr><th>Fecha</th><th>Retorno</th><th>z-score</th><th>Cierre</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Retorno</th><th>{{ resultado.score_label }}</th><th>Cierre</th></tr></thead>
           <tbody>
             {% for e in resultado.eventos %}
-            <tr><td>{{ e.fecha }}</td><td>{{ e.retorno }}</td><td>{{ e.z }}</td><td>{{ e.precio }}</td></tr>
+            <tr><td>{{ e.fecha }}</td><td>{{ e.retorno }}</td><td>{{ e.score }}</td><td>{{ e.precio }}</td></tr>
             {% endfor %}
           </tbody>
         </table>

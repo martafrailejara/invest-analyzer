@@ -17,8 +17,10 @@ FORM_POR_DEFECTO = {
     "ticker": "SXR8.DE",
     "start": "2019-01-01",
     "end": date.today().isoformat(),
+    "method": "zscore",
     "window": "60",
     "threshold": "3",
+    "contamination": "2",
 }
 
 
@@ -29,25 +31,31 @@ def _parsea(form) -> tuple[dict, list[str], list[str]]:
     if not ticker:
         errores.append("Indica un ticker de yfinance.")
 
-    def entero(campo, nombre, minimo):
-        try:
-            v = int(form.get(campo, ""))
-        except ValueError:
-            errores.append(f"{nombre} no es un número entero.")
-            return minimo
-        return v
+    method = form.get("method", "zscore")
+    if method not in ("zscore", "iforest"):
+        errores.append("Método no reconocido.")
+        method = "zscore"
 
-    window = entero("window", "La ventana", 10)
     try:
-        threshold = float((form.get("threshold", "") or "").replace(",", "."))
+        window = int(form.get("window", "") or "60")
+    except ValueError:
+        errores.append("La ventana no es un número entero.")
+        window = 60
+    try:
+        threshold = float((form.get("threshold", "").strip() or "3").replace(",", "."))
     except ValueError:
         errores.append("El umbral no es un número.")
         threshold = 3.0
+    try:
+        contamination = float((form.get("contamination", "").strip() or "2").replace(",", ".")) / 100
+    except ValueError:
+        errores.append("La sensibilidad no es un número.")
+        contamination = 0.02
 
     start = form.get("start", "")
     end = parsea_fechas(start, form.get("end", ""), errores, avisos)
-    params = {"ticker": ticker, "start": start, "end": end,
-              "window": window, "threshold": threshold}
+    params = {"ticker": ticker, "start": start, "end": end, "method": method,
+              "window": window, "threshold": threshold, "contamination": contamination}
     return params, errores, avisos
 
 
@@ -67,8 +75,11 @@ def _prepara(res: dict) -> dict:
         "n_eventos": len(res["eventos"]),
         "dias_evaluados": res["dias_evaluados"],
         "tasa": pct(res["tasa_anomalias"]),
+        "method": res["method"],
+        "score_label": res["score_label"],
         "window": res["window"],
         "threshold": f"{res['threshold']:g}".replace(".", ","),
+        "contamination": f"{res['contamination'] * 100:g}".replace(".", ","),
         "chart": {
             "labels": [d.strftime("%Y-%m-%d") for d in precios.index],
             "precio": lista(precios),
@@ -81,7 +92,7 @@ def _prepara(res: dict) -> dict:
                 "fecha": e["fecha"].strftime("%d-%m-%Y"),
                 "retorno": pct(e["retorno"]),
                 "negativo": e["retorno"] < 0,
-                "z": f"{e['z']:+.1f}".replace(".", ","),
+                "score": f"{e['score']:+.1f}".replace(".", ","),
                 "precio": f"{e['precio']:.2f}".replace(".", ",") + " €",
             }
             for e in sorted(res["eventos"], key=lambda e: e["fecha"], reverse=True)

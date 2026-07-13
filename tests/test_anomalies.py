@@ -25,7 +25,7 @@ def test_detecta_anomalia_inyectada():
     assert serie.index[150] in fechas
     caida = next(e for e in res["eventos"] if e["fecha"] == serie.index[150])
     assert caida["retorno"] == pytest.approx(-0.15)
-    assert abs(caida["z"]) > 3
+    assert abs(caida["score"]) > 3
 
 
 def test_sin_anomalias_no_hay_falsos_positivos():
@@ -42,7 +42,7 @@ def test_el_dia_anomalo_no_contamina_su_propia_referencia():
     caida = next(e for e in res["eventos"] if e["fecha"] == serie.index[150])
     # con σ previa de ~0.5% el z del -15% es enorme; si el día se incluyera
     # a sí mismo en la ventana, el z quedaría muy amortiguado
-    assert abs(caida["z"]) > 10
+    assert abs(caida["score"]) > 10
 
 
 def test_umbral_mas_bajo_detecta_igual_o_mas():
@@ -78,3 +78,37 @@ def test_run_con_downloader(tmp_path):
     res = anomalies.run("AAA", "2024-01-01", "2024-12-31",
                         cache_dir=tmp_path, downloader=downloader)
     assert len(res["eventos"]) >= 1
+
+
+def test_iforest_detecta_la_caida():
+    """El Isolation Forest también marca el desplome inyectado como anomalía."""
+    serie = serie_con_ruido(300, caida_en=200)
+    res = anomalies.detect(serie, method="iforest", window=60, contamination=0.03)
+    fechas = [e["fecha"] for e in res["eventos"]]
+    assert serie.index[200] in fechas
+    assert res["method"] == "iforest"
+    assert res["score_label"] == "score de aislamiento"
+
+
+def test_iforest_contaminacion_controla_cuantas_marca():
+    serie = serie_con_ruido(400, caida_en=300)
+    poco = anomalies.detect(serie, method="iforest", window=60, contamination=0.01)
+    mucho = anomalies.detect(serie, method="iforest", window=60, contamination=0.10)
+    assert len(mucho["eventos"]) > len(poco["eventos"])
+
+
+def test_iforest_reproducible():
+    serie = serie_con_ruido(300, caida_en=150)
+    a = anomalies.detect(serie, method="iforest", window=60, contamination=0.02)
+    b = anomalies.detect(serie, method="iforest", window=60, contamination=0.02)
+    assert [e["fecha"] for e in a["eventos"]] == [e["fecha"] for e in b["eventos"]]
+
+
+def test_method_invalido():
+    with pytest.raises(ValueError, match="zscore.*iforest|method"):
+        anomalies.detect(serie_con_ruido(200), method="otro")
+
+
+def test_contaminacion_invalida():
+    with pytest.raises(ValueError, match="contaminación"):
+        anomalies.detect(serie_con_ruido(200), method="iforest", contamination=0.9)

@@ -3,4 +3,5 @@ pandas
 pyarrow
 yfinance
 scipy
+scikit-learn
 pytest
