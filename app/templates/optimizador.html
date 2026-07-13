@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Optimizador · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Optimizador de cartera</h1>
+  <p>Frontera eficiente de Markowitz: qué combinaciones de pesos minimizan el riesgo histórico para cada nivel de retorno. Descriptivo, sin posiciones cortas.</p>
+</div>
+
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Activos candidatos</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="activos">
+      {% for i in range(4) %}
+      <div class="campo">
+        {% if loop.first %}<label for="ticker_{{ i }}">Tickers de yfinance (2 a 4)</label>{% endif %}
+        <input type="text" id="ticker_{{ i }}" name="ticker_{{ i }}"
+               value="{{ form['ticker_' ~ i] }}" placeholder="SXR8.DE"
+               autocomplete="off" spellcheck="false">
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-grid">
+      <div class="campo">
+        <label for="start">Desde</label>
+        <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
+      </div>
+      <div class="campo">
+        <label for="end">Hasta</label>
+        <input type="date" id="end" name="end" value="{{ form['end'] }}" max="{{ hoy }}">
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Calcular frontera</button>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if resultado %}
+      <div class="grafico-card">
+        <div class="lienzo"><canvas id="grafico" role="img"
+          aria-label="Frontera eficiente: volatilidad frente a retorno anual, con los activos individuales y las carteras de mínima varianza y máximo Sharpe"></canvas></div>
+      </div>
+
+      <table class="tabla-comp">
+        <thead>
+          <tr>
+            <th>Pesos</th>
+            {% for col in resultado.tabla.columnas %}
+            <th><span class="swatch swatch-opt-{{ col.clave }}" aria-hidden="true"></span>{{ col.nombre }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticker in resultado.tabla.tickers %}
+          {% set fila = loop.index0 %}
+          <tr>
+            <td>{{ ticker }}</td>
+            {% for col in resultado.tabla.columnas %}<td>{{ col.pesos[fila] }}</td>{% endfor %}
+          </tr>
+          {% endfor %}
+          <tr>
+            <td>Retorno anual (histórico)</td>
+            {% for col in resultado.tabla.columnas %}<td>{{ col.ret }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td>Volatilidad anual</td>
+            {% for col in resultado.tabla.columnas %}<td>{{ col.vol }}</td>{% endfor %}
+          </tr>
+        </tbody>
+      </table>
+
+      <details class="tabla-anual">
+        <summary>Los {{ resultado.frontera_tabla | length }} puntos de la frontera ({{ resultado.sesiones }} sesiones analizadas)</summary>
+        <table>
+          <thead><tr><th>Retorno</th><th>Volatilidad</th><th>Pesos</th></tr></thead>
+          <tbody>
+            {% for fila in resultado.frontera_tabla %}
+            <tr><td>{{ fila.ret }}</td><td>{{ fila.vol }}</td><td>{{ fila.pesos }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+
+      {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    {% else %}
+      <div class="vacio">
+        <p>Elige de 2 a 4 activos y pulsa <code>Calcular frontera</code>.<br>
+        Cada punto de la frontera es la cartera de menor riesgo histórico para ese retorno.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const pctes = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " %";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // etiquetas directas junto a cada activo (identidad sin depender solo del color)
+  const etiquetasActivos = {
+    id: "etiquetasActivos",
+    afterDatasetsDraw(chart) {
+      const meta = chart.getDatasetMeta(1);
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.font = "10px " + tok("--font-mono");
+      ctx.fillStyle = tok("--color-muted");
+      meta.data.forEach((punto, i) => {
+        ctx.fillText(datos.activos[i].ticker, punto.x + 8, punto.y + 3);
+      });
+      ctx.restore();
+    },
+  };
+
+  const puntoDestacado = (p, token, etiqueta) => ({
+    label: etiqueta,
+    type: "scatter",
+    data: p ? [p] : [],
+    backgroundColor: tok(token),
+    borderColor: tok("--color-paper"),
+    borderWidth: 2,
+    pointRadius: 6,
+    pointHoverRadius: 7,
+  });
+
+  new Chart(document.getElementById("grafico"), {
+    data: {
+      datasets: [
+        {
+          label: "Frontera eficiente",
+          type: "line",
+          data: datos.frontera,
+          borderColor: tok("--chart-frontera"),
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-frontera"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          fill: false,
+          borderJoinStyle: "round",
+        },
+        {
+          label: "Activos individuales",
+          type: "scatter",
+          data: datos.activos,
+          backgroundColor: tok("--chart-activos"),
+          borderColor: tok("--color-paper"),
+          borderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 6,
+        },
+        puntoDestacado(datos.min_var, "--chart-minvar", "Mínima varianza"),
+        puntoDestacado(datos.max_sharpe, "--chart-maxsharpe", "Máximo Sharpe"),
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "nearest", intersect: false },
+      plugins: {
+        legend: {
+          position: "top",
+          align: "start",
+          labels: {
+            usePointStyle: true,
+            color: tok("--color-ink-2"),
+            font: { family: tok("--font-body"), size: 12 },
+          },
+        },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"),
+          bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10,
+          cornerRadius: 6,
+          usePointStyle: true,
+          boxPadding: 4,
+          callbacks: {
+            label: (c) => {
+              const base = " Retorno " + pctes(c.parsed.y) + " · volatilidad " + pctes(c.parsed.x);
+              const bruto = c.dataset.data[c.dataIndex];
+              if (bruto.ticker) return " " + bruto.ticker + " ·" + base;
+              return bruto.pesos ? [base, " " + bruto.pesos] : base;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: "linear",
+          title: { display: true, text: "Volatilidad anual", color: tok("--color-muted"),
+                   font: { family: tok("--font-mono"), size: 10 } },
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+                   callback: (v) => pctes(v), maxTicksLimit: 8 },
+        },
+        y: {
+          type: "linear",
+          title: { display: true, text: "Retorno anual (histórico)", color: tok("--color-muted"),
+                   font: { family: tok("--font-mono"), size: 10 } },
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+                   callback: (v) => pctes(v), maxTicksLimit: 6 },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

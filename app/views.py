@@ -5,11 +5,6 @@ from flask import Blueprint, abort, redirect, render_template, url_for
 pages = Blueprint("pages", __name__)
 
 MODULOS_PENDIENTES = {
-    "optimizador": (
-        "Optimizador de cartera",
-        "Calculará la frontera eficiente de Markowitz: qué combinación de pesos minimiza el riesgo para un retorno objetivo.",
-        "Fase 5",
-    ),
     "dividendos": (
         "Agregador de dividendos",
         "Cruzará el histórico de dividendos con las posiciones reales de la cartera para mostrar lo cobrado y proyectar el año siguiente.",

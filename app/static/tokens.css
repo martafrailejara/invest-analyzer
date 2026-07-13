@@ -33,6 +33,12 @@
   --chart-esc-b: oklch(52% 0.13 300);  /* #7555a8 violeta */
   --chart-esc-c: oklch(52% 0.12 160);  /* #007d50 verde */
 
+  /* frontera eficiente — cuaterna validada (CVD ΔE mín. 34.4 con el ámbar) */
+  --chart-frontera:   oklch(58% 0.20 256);  /* línea, cobalto */
+  --chart-activos:    oklch(60% 0.13 75);   /* #ad7300 ámbar, puntos de activos */
+  --chart-minvar:     oklch(52% 0.13 300);  /* violeta */
+  --chart-maxsharpe:  oklch(52% 0.12 160);  /* verde */
+
   /* tipografía — Space Grotesk display · Inter cuerpo · JetBrains Mono cifras/etiquetas */
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body:    "Inter", ui-sans-serif, system-ui, sans-serif;

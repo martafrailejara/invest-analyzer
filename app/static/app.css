@@ -238,6 +238,8 @@ a { color: inherit; }
 .swatch-a { background: var(--chart-esc-a); }
 .swatch-b { background: var(--chart-esc-b); }
 .swatch-c { background: var(--chart-esc-c); }
+.swatch-opt-min_var { background: var(--chart-minvar); }
+.swatch-opt-max_sharpe { background: var(--chart-maxsharpe); }
 
 /* módulos pendientes */
 .pendiente { max-width: 48ch; }
