@@ -80,3 +80,38 @@
   --z-sticky: 200;
   --z-modal:  400;
 }
+
+/* ---------- Modo oscuro ----------
+ * Mismos tonos ancla (256), solo se mueven luminosidad y croma.
+ * Series revalidadas contra la superficie oscura con el validador de dataviz;
+ * el aportado usa una variante clara (la escalonada aporta codificación
+ * secundaria además del color).
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-paper:      oklch(15%  0.012 255);
+    --color-paper-2:    oklch(19%  0.014 255);
+    --color-rule:       oklch(25%  0.012 255);
+    --color-rule-2:     oklch(33%  0.014 255);
+    --color-muted:      oklch(68%  0.015 255);
+    --color-ink-2:      oklch(85%  0.01  253);
+    --color-ink:        oklch(94%  0.006 250);
+    --color-graphite:   oklch(27%  0.016 260);
+    --color-graphite-2: oklch(33%  0.016 260);
+
+    --color-accent:       oklch(62%  0.18 256);
+    --color-accent-hover: oklch(67%  0.16 256);
+    --color-accent-ink:   oklch(15%  0.012 255);
+    --color-focus:        oklch(62%  0.18 256);
+    --color-scrim:        oklch(5%   0.01 255 / 0.5);
+    --color-error:        oklch(66%  0.17 27);
+    --color-error-bg:     oklch(24%  0.05 27);
+    --shadow-whisper:     none;
+
+    --chart-invested: oklch(66% 0.10 256);  /* #6994cf, validado en dark */
+    --chart-grid:     oklch(23% 0.01 255);
+    --chart-value-wash: oklch(58% 0.20 256 / 0.12);
+  }
+}
