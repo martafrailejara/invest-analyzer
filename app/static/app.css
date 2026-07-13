@@ -221,6 +221,30 @@ a { color: inherit; }
   .cartera-cabecera { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* barra de progreso de la meta */
+.progreso-barra { height: 0.5rem; border-radius: 999px; background: var(--color-paper-2);
+  border: 1px solid var(--color-rule); overflow: hidden; }
+.progreso-barra__relleno { height: 100%; background: var(--color-accent); border-radius: 999px; }
+.fila-base td { background: var(--color-paper-2); }
+
+/* hallazgos del chequeo de cartera */
+.hallazgo { border: 1px solid var(--color-rule); border-radius: var(--radius-card);
+  padding: var(--space-md) var(--space-lg); background: var(--color-paper); }
+.hallazgo + .hallazgo { margin-top: var(--space-sm); }
+.hallazgo__meta { font-family: var(--font-mono); font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-muted); }
+.hallazgo--atencion .hallazgo__sev { color: var(--color-error); }
+.hallazgo--aviso .hallazgo__sev { color: var(--chart-activos); }
+.hallazgo--info .hallazgo__sev { color: var(--color-accent); }
+.hallazgo--ok .hallazgo__sev { color: var(--chart-maxsharpe); }
+.hallazgo__titulo { font-family: var(--font-display); font-weight: 500;
+  color: var(--color-ink); margin-top: var(--space-2xs); }
+.hallazgo__detalle { font-size: var(--text-sm); color: var(--color-ink-2);
+  margin-top: var(--space-2xs); max-width: 70ch; }
+.hallazgo__lista { margin: var(--space-2xs) 0 0; padding-left: 1.2em;
+  font-size: var(--text-sm); color: var(--color-ink-2); }
+.hallazgo__lista li + li { margin-top: var(--space-2xs); }
+
 /* perfil de riesgo (optimizador) */
 .perfil-riesgo { border: 1px solid var(--color-rule-2);
   border-radius: var(--radius-ctl); padding: var(--space-md) var(--space-lg);

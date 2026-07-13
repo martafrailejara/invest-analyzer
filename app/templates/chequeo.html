@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Chequeo · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Chequeo de cartera</h1>
+  <p>Reglas estadísticas automáticas sobre tu cartera real: desviaciones, concentración, correlaciones, eficiencia y señales.
+  <strong>No es asesoramiento profesional</strong> — son comprobaciones mecánicas sobre datos históricos.</p>
+</div>
+
+{% if sin_csv %}
+<section class="vacio">
+  <p>No hay export de transacciones en <code>data/transacciones.csv</code>.<br>
+  Guarda ahí tu export de Trade Republic para poder chequear la cartera.</p>
+</section>
+{% elif errores %}
+<div class="alert" role="alert">
+  <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% elif resultado %}
+<div class="workbench">
+  <section class="resultados" aria-live="polite">
+    {% for h in resultado.hallazgos %}
+    <article class="hallazgo hallazgo--{{ h.severidad }}">
+      <p class="hallazgo__meta"><span class="hallazgo__sev">{{ {'atencion': 'atención', 'aviso': 'aviso', 'info': 'info'}[h.severidad] }}</span> · {{ h.regla }}</p>
+      <p class="hallazgo__titulo">{{ h.titulo }}</p>
+      <p class="hallazgo__detalle">{{ h.detalle }}</p>
+    </article>
+    {% endfor %}
+
+    {% if resultado.correctos %}
+    <article class="hallazgo hallazgo--ok">
+      <p class="hallazgo__meta"><span class="hallazgo__sev">correcto</span></p>
+      <ul class="hallazgo__lista">
+        {% for c in resultado.correctos %}<li>{{ c }}</li>{% endfor %}
+      </ul>
+    </article>
+    {% endif %}
+
+    {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    <p class="notice">Umbrales: desviación 5 pp · concentración 60 % · correlación 0,85 · eficiencia 1 pp · comisión 1 %.
+    Las reglas viven en modules/checkup.py y son ajustables.</p>
+  </section>
+
+  <form class="panel" method="post" action="{{ url_for('checkup.objetivos') }}">
+    <p class="panel__title">Pesos objetivo</p>
+    <p class="ayuda">Tu asignación deseada, en % (deben sumar 100). Vacío = sin objetivo.</p>
+    <div class="activos">
+      {% for p in resultado.posiciones %}
+      <div class="activo-fila">
+        <div class="campo">
+          {% if loop.first %}<label>Posición y objetivo %</label>{% endif %}
+          <input type="text" value="{{ p.ticker }} · ahora {{ p.peso_pct }} %" disabled>
+        </div>
+        <div class="campo">
+          {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}
+          <input type="number" name="obj_{{ p.symbol }}" value="{{ p.objetivo_pct }}"
+                 min="0" max="100" step="1" aria-label="Peso objetivo de {{ p.ticker }}">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn--primary" type="submit">Guardar objetivos</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

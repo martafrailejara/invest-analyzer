@@ -10,6 +10,10 @@ GRUPOS = [
     ("Tu dinero", [
         ("holdings.page", "Mi cartera",
          "Las posiciones reales de tu export de Trade Republic valoradas a mercado: valor, ganancia aislada de las aportaciones, P&L por posición."),
+        ("checkup.page", "Chequeo de cartera",
+         "Recomendaciones estadísticas sobre tu cartera: desviación de pesos objetivo, concentración, correlaciones, eficiencia y comisiones. No es asesoramiento profesional."),
+        ("goals.page", "Metas financieras",
+         "\"Quiero X € en el año Y\": progreso real y probabilidad Monte Carlo de llegar, con variantes de aportación."),
         ("dividends.page", "Dividendos",
          "Lo cobrado por año y posición, yield on cost y la proyección simple a 12 meses."),
     ]),

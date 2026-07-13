@@ -16,7 +16,9 @@ def create_app() -> Flask:
 
     from app.anomalies_web import anomalies
     from app.backtester_web import backtester
+    from app.checkup_web import checkup
     from app.dividends_web import dividends
+    from app.goals_web import goals
     from app.holdings_web import holdings
     from app.landing_web import landing
     from app.montecarlo_web import montecarlo
@@ -27,6 +29,8 @@ def create_app() -> Flask:
 
     app.register_blueprint(landing)
     app.register_blueprint(holdings)
+    app.register_blueprint(checkup)
+    app.register_blueprint(goals)
     app.register_blueprint(backtester)
     app.register_blueprint(simulator)
     app.register_blueprint(optimizer)

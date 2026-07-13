@@ -17,6 +17,8 @@
       <nav class="nav__links" aria-label="Módulos">
         {% for url, nombre in [
           (url_for('holdings.page'), 'Mi cartera'),
+          (url_for('checkup.page'), 'Chequeo'),
+          (url_for('goals.page'), 'Metas'),
           (url_for('backtester.page'), 'Backtester'),
           (url_for('simulator.page'), 'Simulador'),
           (url_for('optimizer.page'), 'Optimizador'),
@@ -44,7 +46,9 @@
         <kbd>esc</kbd>
       </div>
       <div class="cmdk__results">
-        <button class="cmdk__item is-active" data-href="{{ url_for('holdings.page') }}">Mi cartera <span class="estado">portada</span></button>
+        <button class="cmdk__item is-active" data-href="{{ url_for('holdings.page') }}">Mi cartera <span class="estado">activo</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('checkup.page') }}">Chequeo de cartera <span class="estado">activo</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('goals.page') }}">Metas financieras <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('backtester.page') }}">Backtester <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('simulator.page') }}">Simulador qué-pasaría-si <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('optimizer.page') }}">Optimizador de cartera <span class="estado">activo</span></button>
