@@ -50,12 +50,20 @@ FORM_VALIDO = {
 }
 
 
-def test_index_es_mi_cartera(client, monkeypatch):
-    # sin depender del CSV real ni de la red
+def test_index_es_la_landing(client):
+    r = client.get("/")
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200
+    assert "Analiza, simula y mide" in html
+    assert "Isolation Forest" in html  # el ML se anuncia en la portada
+    assert "/cartera" in html
+
+
+def test_mi_cartera_en_su_ruta(client, monkeypatch):
     from app import holdings_web
 
     monkeypatch.setattr(holdings_web, "CSV_REAL", holdings_web.RAIZ / "no-existe.csv")
-    r = client.get("/")
+    r = client.get("/cartera")
     assert r.status_code == 200
     assert "Mi cartera" in r.get_data(as_text=True)
 
@@ -69,7 +77,7 @@ def test_get_backtester_muestra_formulario(client):
 
 
 def test_todos_los_modulos_responden_y_404(client):
-    for ruta in ("/backtester", "/simulador", "/optimizador", "/dividendos", "/anomalias"):
+    for ruta in ("/backtester", "/simulador", "/optimizador", "/riesgo", "/montecarlo", "/dividendos", "/anomalias", "/guardados"):
         assert client.get(ruta).status_code == 200, ruta
     assert client.get("/no-existe").status_code == 404
 

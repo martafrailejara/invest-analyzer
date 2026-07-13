@@ -13,7 +13,7 @@
 <body>
   <header class="nav">
     <div class="nav__inner">
-      <a class="nav__brand" href="{{ url_for('holdings.page') }}">invest-analyzer</a>
+      <a class="nav__brand" href="{{ url_for('landing.page') }}">invest-analyzer</a>
       <nav class="nav__links" aria-label="Módulos">
         {% for url, nombre in [
           (url_for('holdings.page'), 'Mi cartera'),
@@ -59,6 +59,11 @@
       </div>
     </div>
   </div>
+
+  <datalist id="tickers">
+    {% for t, n in catalogo_tickers.items() %}<option value="{{ t }}">{{ n }}</option>{% endfor %}
+  </datalist>
+  <script type="application/json" id="catalogo-tickers">{{ catalogo_tickers | tojson }}</script>
 
   <main class="main">
     {% with mensajes = get_flashed_messages() %}

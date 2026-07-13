@@ -40,7 +40,7 @@
           {% if loop.first %}<label for="ticker_{{ letra }}_{{ i }}">Activo y peso %</label>{% endif %}
           <input type="text" id="ticker_{{ letra }}_{{ i }}" name="ticker_{{ letra }}_{{ i }}"
                  value="{{ form['ticker_' ~ letra ~ '_' ~ i] }}" placeholder="SXR8.DE"
-                 autocomplete="off" spellcheck="false">
+                 list="tickers" spellcheck="false">
         </div>
         <div class="campo">
           {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}

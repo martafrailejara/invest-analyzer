@@ -80,6 +80,19 @@
     requestAnimationFrame(paso);
   });
 
+  /* ---------- Nombre del activo al pasar el ratón ---------- */
+  const catalogoEl = document.getElementById("catalogo-tickers");
+  if (catalogoEl) {
+    const catalogo = JSON.parse(catalogoEl.textContent);
+    document.querySelectorAll('input[list="tickers"]').forEach((el) => {
+      const pinta = () => {
+        el.title = catalogo[el.value.trim().toUpperCase()] || "";
+      };
+      el.addEventListener("input", pinta);
+      pinta();
+    });
+  }
+
   /* ---------- Estado de carga del formulario ---------- */
   const form = document.getElementById("form-backtest");
   if (form) {

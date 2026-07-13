@@ -75,7 +75,7 @@ def _prepara(res: dict) -> dict:
     }
 
 
-@holdings.route("/")
+@holdings.route("/cartera")
 def page():
     if not CSV_REAL.exists():
         return render_template("cartera.html", resultado=None, errores=[], avisos=[], sin_csv=True)

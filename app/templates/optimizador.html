@@ -22,12 +22,18 @@
         {% if loop.first %}<label for="ticker_{{ i }}">Tickers de yfinance (2 a 4)</label>{% endif %}
         <input type="text" id="ticker_{{ i }}" name="ticker_{{ i }}"
                value="{{ form['ticker_' ~ i] }}" placeholder="SXR8.DE"
-               autocomplete="off" spellcheck="false">
+               list="tickers" spellcheck="false">
       </div>
       {% endfor %}
     </div>
 
     <div class="form-grid">
+      <div class="campo span-2">
+        <label for="vol_objetivo">Volatilidad objetivo % (opcional)</label>
+        <input type="text" inputmode="decimal" id="vol_objetivo" name="vol_objetivo"
+               value="{{ form['vol_objetivo'] }}" placeholder="15">
+        <p class="ayuda">Tu tolerancia al riesgo: se busca la cartera de máximo retorno histórico que no la supere.</p>
+      </div>
       <div class="campo">
         <label for="start">Desde</label>
         <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
@@ -48,6 +54,23 @@
           aria-label="Frontera eficiente: volatilidad frente a retorno anual, con los activos individuales y las carteras de mínima varianza y máximo Sharpe"></canvas></div>
         <p class="notice" id="seleccion-frontera">Haz click en un punto de la frontera para ver su composición.</p>
       </div>
+
+      {% if resultado.perfil %}
+      <div class="perfil-riesgo">
+        {% if resultado.perfil.alcanzable %}
+        <p class="perfil-riesgo__titulo">Con volatilidad ≤ {{ resultado.perfil.target }}</p>
+        <p class="perfil-riesgo__dato">La combinación de la frontera más rentable dio un
+        <strong>{{ resultado.perfil.ret }} anual</strong> histórico (volatilidad real {{ resultado.perfil.vol }}):</p>
+        <p class="perfil-riesgo__pesos">{{ resultado.perfil.pesos }}</p>
+        <p class="ayuda">Retorno pasado del periodo analizado, no una promesa futura.</p>
+        {% else %}
+        <p class="perfil-riesgo__titulo">Objetivo {{ resultado.perfil.target }} no alcanzable</p>
+        <p class="perfil-riesgo__dato">Con estos activos, el riesgo mínimo posible es
+        <strong>{{ resultado.perfil.vol_minima }}</strong>. La cartera menos arriesgada dio {{ resultado.perfil.ret }} anual:</p>
+        <p class="perfil-riesgo__pesos">{{ resultado.perfil.pesos }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
 
       <table class="tabla-comp">
         <thead>

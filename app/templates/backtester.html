@@ -23,7 +23,7 @@
           {% if loop.first %}<label for="ticker_{{ i }}">Activo (ticker yfinance) y peso %</label>{% endif %}
           <input type="text" id="ticker_{{ i }}" name="ticker_{{ i }}"
                  value="{{ form['ticker_' ~ i] }}" placeholder="SXR8.DE"
-                 autocomplete="off" spellcheck="false">
+                 list="tickers" spellcheck="false">
         </div>
         <div class="campo">
           {% if loop.first %}<label for="peso_{{ i }}" aria-hidden="true">&nbsp;</label>{% endif %}
@@ -55,7 +55,7 @@
       <div class="campo">
         <label for="benchmark">Comparar con (opcional)</label>
         <input type="text" id="benchmark" name="benchmark" value="{{ form['benchmark'] }}"
-               placeholder="EUNL.DE" autocomplete="off" spellcheck="false">
+               placeholder="EUNL.DE" list="tickers" spellcheck="false">
       </div>
       <div class="campo">
         <label for="rebalance">Rebalanceo</label>

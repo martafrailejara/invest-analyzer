@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}invest-analyzer · análisis de inversión sobre datos reales{% endblock %}
+{% block content %}
+<div class="landing-hero">
+  <p class="landing-hero__kicker">Datos de mercado reales · cartera propia · sin recomendaciones</p>
+  <h1>Analiza, simula y mide<br>tus inversiones.</h1>
+  <p class="landing-hero__lede">Ocho herramientas sobre el mismo motor de cálculo: desde valorar tu cartera de
+  Trade Republic a precio de mercado hasta proyectar miles de escenarios futuros. Todo descriptivo —
+  la plataforma enseña números, las decisiones son tuyas.</p>
+  <div class="landing-hero__cta">
+    <a class="btn btn--primary" href="{{ url_for('holdings.page') }}">Ver mi cartera</a>
+    <a class="landing-hero__link" href="{{ url_for('backtester.page') }}">o probar el backtester →</a>
+  </div>
+</div>
+
+<div class="landing-grupos">
+  {% for titulo, modulos in grupos %}
+  <section class="landing-grupo">
+    <h2 class="panel__title">{{ titulo }}</h2>
+    <ul>
+      {% for endpoint, nombre, descripcion in modulos %}
+      <li>
+        <a class="landing-modulo" href="{{ url_for(endpoint) }}">
+          <span class="landing-modulo__nombre">{{ nombre }}</span>
+          <span class="landing-modulo__desc">{{ descripcion }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>
+
+<p class="landing-pie">Navega con <kbd>⌘K</kbd> desde cualquier página · los backtests guardados viven en
+<a href="{{ url_for('saved.page') }}">Guardados</a>.</p>
+{% endblock %}
