@@ -221,6 +221,27 @@ a { color: inherit; }
   .cartera-cabecera { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* mensajes flash */
+.flash { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-bottom: var(--space-lg);
+         padding: var(--space-sm) var(--space-md); border-radius: var(--radius-ctl);
+         background: color-mix(in oklab, var(--color-accent) 12%, var(--color-paper));
+         border: 1px solid var(--color-rule); font-size: var(--text-sm); color: var(--color-ink); }
+
+/* guardar backtest + análisis guardados */
+.guardar-form { display: flex; gap: var(--space-xs); margin-top: var(--space-md); }
+.guardar-form input { flex: 1; height: 2.5rem; padding: 0 var(--space-sm);
+  font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-ink);
+  background: var(--color-paper); border: 1px solid var(--color-rule-2); border-radius: var(--radius-ctl);
+  outline: 2px solid transparent; outline-offset: 1px; }
+.guardar-form input:focus-visible { outline: 2px solid var(--color-focus); }
+.btn--min { height: 2.5rem; padding: 0 var(--space-md); background: var(--color-paper-2);
+  color: var(--color-ink); border: 1px solid var(--color-rule-2);
+  font-size: var(--text-sm); text-decoration: none; }
+.btn--min:hover { background: var(--color-paper); border-color: var(--color-ink-2); }
+.btn--danger { color: var(--color-error); }
+.tabla-guardados .acciones { display: flex; gap: var(--space-xs); justify-content: flex-end; }
+.tabla-guardados .acciones form { display: inline; }
+
 /* matriz de correlación (heatmap diverente, theme-aware vía color-mix) */
 .heatmap { display: grid; grid-template-columns: minmax(4.5rem, auto) repeat(var(--n), minmax(0, 1fr));
            gap: 2px; margin-top: var(--space-sm); }

@@ -5,6 +5,8 @@ from flask import Flask
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    # solo para mensajes flash de sesión; app local sin datos sensibles en sesión
+    app.secret_key = "invest-analyzer-local"
 
     @app.context_processor
     def _globales():
@@ -17,6 +19,7 @@ def create_app() -> Flask:
     from app.montecarlo_web import montecarlo
     from app.optimizer_web import optimizer
     from app.risk_web import risk
+    from app.saved_web import saved
     from app.simulator_web import simulator
 
     app.register_blueprint(holdings)
@@ -27,4 +30,5 @@ def create_app() -> Flask:
     app.register_blueprint(montecarlo)
     app.register_blueprint(dividends)
     app.register_blueprint(anomalies)
+    app.register_blueprint(saved)
     return app

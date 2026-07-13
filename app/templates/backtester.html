@@ -104,6 +104,12 @@
         </table>
       </details>
 
+      <form class="guardar-form" method="post" action="{{ url_for('backtester.guardar') }}">
+        {% for campo, valor in form.items() %}<input type="hidden" name="{{ campo }}" value="{{ valor }}">{% endfor %}
+        <input type="text" name="nombre_guardar" placeholder="Nombre para guardar este backtest" maxlength="80">
+        <button class="btn btn--min" type="submit">Guardar</button>
+      </form>
+
       {% if resultado.benchmark %}
       <p class="notice">Benchmark {{ resultado.benchmark.nombre }} con las mismas aportaciones:
       valor final {{ resultado.benchmark.final }} · CAGR {{ resultado.benchmark.cagr }}.</p>

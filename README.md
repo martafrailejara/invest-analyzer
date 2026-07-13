@@ -9,6 +9,8 @@ Plataforma web de análisis y simulación de estrategias de inversión. Combina 
 - **Backend:** Python, pandas, numpy
 - **Web:** Flask (server-rendered) + Chart.js
 - **Datos de mercado:** yfinance, con caché local en parquet
+- **Cálculo:** numpy, pandas, scipy (optimización), scikit-learn (Isolation Forest)
+- **Persistencia:** SQLite para análisis guardados
 - **Cartera personal:** parser del CSV de transacciones de Trade Republic
 
 ## Estructura
@@ -58,12 +60,15 @@ La página de dividendos lee la cartera real de `data/transacciones.csv`; como a
 
 ## Estado
 
-Los cinco módulos están completos y funcionales:
+Módulos, todos funcionales:
 
-1. **Backtester** — estrategias parametrizables (buy & hold, DCA, rebalanceo) sobre precios reales, con métricas time-weighted (CAGR, volatilidad, Sharpe, máximo drawdown).
-2. **Simulador qué-pasaría-si** — 2-3 escenarios comparados lado a lado sobre el mismo motor.
-3. **Optimizador** — frontera eficiente de Markowitz (scipy, sin cortos), carteras de mínima varianza y máximo Sharpe.
-4. **Dividendos** — cobrado por año y posición cruzando ex-fechas con las transacciones, yield on cost y proyección a 12 meses.
-5. **Anomalías** — z-score sobre ventana móvil previa (sin lookahead) + bandas de Bollinger, con umbral configurable.
+1. **Mi cartera** (portada) — posiciones reales valoradas a mercado, curva valor vs aportado, ganancia de mercado aislada, flujo mensual, P&L por posición e historial.
+2. **Backtester** — estrategias parametrizables (buy & hold, DCA, rebalanceo, benchmark, DCA de N meses) con métricas time-weighted. Los backtests se pueden **guardar** (SQLite) y recargar.
+3. **Simulador qué-pasaría-si** — 2-3 escenarios comparados sobre el mismo motor.
+4. **Optimizador** — frontera eficiente de Markowitz (scipy, sin cortos), mínima varianza y máximo Sharpe, frontera clicable.
+5. **Análisis de riesgo** — Sharpe, Sortino, VaR/CVaR, beta vs índice y matriz de correlación (heatmap).
+6. **Proyección Monte Carlo** — bootstrap de retornos mensuales, abanico de percentiles a X años con aportaciones.
+7. **Dividendos** — cobrado por año/posición, yield on cost y proyección a 12 meses.
+8. **Anomalías** — z-score sobre ventana previa (sin lookahead) o **Isolation Forest** (ML), con bandas de Bollinger.
 
 Construido por fases (0-7) con tests en cada capa: métricas y motor verificados contra casos calculados a mano, módulos contra propiedades y casos analíticos, y las páginas Flask con motores sustituidos (sin red).

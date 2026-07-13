@@ -24,6 +24,7 @@
           (url_for('montecarlo.page'), 'Monte Carlo'),
           (url_for('dividends.page'), 'Dividendos'),
           (url_for('anomalies.page'), 'Anomalías'),
+          (url_for('saved.page'), 'Guardados'),
         ] %}
         <a class="nav__link" href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ nombre }}</a>
         {% endfor %}
@@ -51,6 +52,7 @@
         <button class="cmdk__item" data-href="{{ url_for('montecarlo.page') }}">Proyección Monte Carlo <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('dividends.page') }}">Agregador de dividendos <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('anomalies.page') }}">Detector de anomalías <span class="estado">activo</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('saved.page') }}">Análisis guardados <span class="estado">activo</span></button>
       </div>
       <div class="cmdk__foot">
         <span><kbd>↑↓</kbd> navegar</span><span><kbd>↵</kbd> abrir</span><span><kbd>esc</kbd> cerrar</span>
@@ -59,6 +61,11 @@
   </div>
 
   <main class="main">
+    {% with mensajes = get_flashed_messages() %}
+      {% if mensajes %}
+        <div class="flash" role="status">{% for m in mensajes %}<span>{{ m }}</span>{% endfor %}</div>
+      {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
   </main>
 

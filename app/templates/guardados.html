@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Guardados · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Análisis guardados</h1>
+  <p>Backtests que has guardado, con sus métricas. Recárgalos para volver a ejecutarlos con los mismos parámetros.</p>
+</div>
+
+{% if analisis %}
+<table class="tabla-comp tabla-guardados">
+  <thead>
+    <tr><th>Nombre</th><th>Tipo</th><th>Valor final</th><th>CAGR</th><th>Máx. DD</th><th>Guardado</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for a in analisis %}
+    <tr>
+      <td>{{ a.name }}</td>
+      <td>{{ a.kind }}</td>
+      <td>{{ a.summary.final if a.summary.final else '—' }}</td>
+      <td>{{ a.summary.cagr if a.summary.cagr else '—' }}</td>
+      <td>{{ a.summary.drawdown if a.summary.drawdown else '—' }}</td>
+      <td>{{ a.created_at.replace('T', ' ')[:16] }}</td>
+      <td class="acciones">
+        {% if a.cargar_url %}<a class="btn btn--min" href="{{ a.cargar_url }}">Cargar</a>{% endif %}
+        <form method="post" action="{{ url_for('saved.borrar', analysis_id=a.id) }}"
+              onsubmit="return confirm('¿Borrar «{{ a.name }}»?')">
+          <button class="btn btn--min btn--danger" type="submit">Borrar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<section class="vacio">
+  <p>Aún no has guardado ningún análisis.<br>
+  Ejecuta un <a href="{{ url_for('backtester.page') }}">backtest</a> y pulsa «Guardar» bajo los resultados.</p>
+</section>
+{% endif %}
+{% endblock %}
