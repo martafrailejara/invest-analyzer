@@ -25,6 +25,22 @@ PriceDownloader = Callable[[str, pd.Timestamp, pd.Timestamp], pd.Series]
 DividendDownloader = Callable[[str], pd.Series]
 
 
+FX_EURUSD = "EURUSD=X"  # dólares por euro
+
+SUFIJOS_EUR = (".DE", ".AS", ".PA", ".MC", ".MI", ".BR", ".LS", ".VI", ".HE", "-EUR")
+INDICES_USD = {"^GSPC", "^DJI", "^IXIC", "^NDX"}
+
+
+def currency_of(ticker: str) -> str:
+    """Divisa de cotización estimada por el sufijo del ticker: 'EUR' o 'USD'."""
+    t = ticker.upper()
+    if t.endswith(SUFIJOS_EUR) or t in ("^IBEX", "^STOXX50E") or t == FX_EURUSD:
+        return "EUR"
+    if t in INDICES_USD or ("." not in t and "^" not in t) or t.endswith("-USD"):
+        return "USD"  # tickers sin sufijo: bolsas americanas
+    return "EUR"  # sufijos europeos no listados: se asume EUR
+
+
 def get_prices(
     tickers: Iterable[str],
     start,
@@ -32,8 +48,13 @@ def get_prices(
     *,
     cache_dir: Path | str | None = None,
     downloader: PriceDownloader | None = None,
+    convert_to_eur: bool = True,
 ) -> pd.DataFrame:
-    """Precios de cierre ajustados: índice de fechas, una columna por ticker."""
+    """Precios de cierre ajustados: índice de fechas, una columna por ticker.
+
+    Los tickers que cotizan en USD se convierten a EUR con el cruce
+    ``EURUSD=X`` (alineado por fecha), para no sumar divisas distintas.
+    """
     start_ts, end_ts = _parse_range(start, end)
     hoy = pd.Timestamp.today().normalize()
     if start_ts > hoy:
@@ -43,6 +64,7 @@ def get_prices(
     cache = Path(cache_dir) if cache_dir else DEFAULT_CACHE_DIR
     fetch = downloader or _yf_download_prices
 
+    fx = None
     series = []
     for ticker in tickers:
         serie = _cached_prices(ticker, start_ts, end_ts, cache, fetch)
@@ -58,6 +80,13 @@ def get_prices(
                 f"'{ticker}' solo tiene datos hasta {recorte.index.max().date()} "
                 f"(se pidió hasta {end_ts.date()})"
             )
+        if convert_to_eur and currency_of(ticker) == "USD":
+            if fx is None:
+                fx = _cached_prices(FX_EURUSD, start_ts, end_ts, cache, fetch)
+            tasa = fx.reindex(recorte.index).ffill().bfill()
+            recorte = recorte / tasa
+            recorte.name = ticker
+            warnings.warn(f"'{ticker}' cotiza en USD: convertido a EUR con {FX_EURUSD}")
         series.append(recorte)
     return pd.concat(series, axis=1).sort_index()
 
