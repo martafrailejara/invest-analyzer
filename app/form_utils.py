@@ -54,12 +54,19 @@ def parsea_activos(filas: list[tuple[str, str]], errores: list[str], contexto: s
     return {t: p / 100 for t, p in pesos.items()}
 
 
-def parsea_fechas(start: str, end: str, errores: list[str]) -> None:
+def parsea_fechas(start: str, end: str, errores: list[str], avisos: list[str]) -> str:
+    """Valida el rango y devuelve el ``end`` efectivo, recortado a hoy si hace falta."""
+    hoy = date.today()
     try:
-        if date.fromisoformat(start) >= date.fromisoformat(end):
+        fin = date.fromisoformat(end)
+        if fin > hoy:
+            avisos.append(f"Solo hay histórico hasta hoy: el rango se recorta de {end} a {hoy.isoformat()}.")
+            end, fin = hoy.isoformat(), hoy
+        if date.fromisoformat(start) >= fin:
             errores.append("La fecha inicial debe ser anterior a la final.")
     except ValueError:
         errores.append("Fechas incompletas o con formato incorrecto.")
+    return end
 
 
 def parsea_rebalanceo(valor: str, errores: list[str]) -> str | None:

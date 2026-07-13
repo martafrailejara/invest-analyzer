@@ -11,6 +11,7 @@ Todas las funciones aceptan un ``downloader`` inyectable para testear sin red.
 from __future__ import annotations
 
 import json
+import warnings
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -34,6 +35,11 @@ def get_prices(
 ) -> pd.DataFrame:
     """Precios de cierre ajustados: índice de fechas, una columna por ticker."""
     start_ts, end_ts = _parse_range(start, end)
+    hoy = pd.Timestamp.today().normalize()
+    if start_ts > hoy:
+        raise ValueError(f"El rango empieza en el futuro ({start_ts.date()}): no hay datos que consultar")
+    # no existen precios futuros: recortar evita registrar cobertura falsa en caché
+    end_ts = min(end_ts, hoy)
     cache = Path(cache_dir) if cache_dir else DEFAULT_CACHE_DIR
     fetch = downloader or _yf_download_prices
 
@@ -46,6 +52,11 @@ def get_prices(
                 f"Sin datos de precios para '{ticker}' entre {start_ts.date()} "
                 f"y {end_ts.date()}. ¿Es un ticker válido de yfinance? "
                 "(ver core/isin_map.py)"
+            )
+        if (end_ts - recorte.index.max()).days > 5:
+            warnings.warn(
+                f"'{ticker}' solo tiene datos hasta {recorte.index.max().date()} "
+                f"(se pidió hasta {end_ts.date()})"
             )
         series.append(recorte)
     return pd.concat(series, axis=1).sort_index()
@@ -88,14 +99,16 @@ def _cached_prices(
     fichero = cache_dir / f"{_safe_filename(ticker)}.parquet"
     meta = cache_dir / f"{_safe_filename(ticker)}.meta.json"
 
+    hoy = pd.Timestamp.today().normalize()
     if fichero.exists() and meta.exists():
         cubierto = json.loads(meta.read_text())
         cub_start = pd.Timestamp(cubierto["start"])
         cub_end = pd.Timestamp(cubierto["end"])
-        if cub_start <= start and end <= cub_end:
-            return pd.read_parquet(fichero)[ticker]
-        start = min(start, cub_start)
-        end = max(end, cub_end)
+        if cub_end <= hoy:  # una cobertura futura es imposible: meta corrupto, se refresca
+            if cub_start <= start and end <= cub_end:
+                return pd.read_parquet(fichero)[ticker]
+            start = min(start, cub_start)
+            end = max(end, cub_end)
 
     serie = fetch(ticker, start, end)
     if serie.empty:
@@ -107,7 +120,8 @@ def _cached_prices(
     serie.name = ticker
     cache_dir.mkdir(parents=True, exist_ok=True)
     serie.to_frame().to_parquet(fichero)
-    meta.write_text(json.dumps({"start": str(start.date()), "end": str(end.date())}))
+    end_cubierto = min(end, hoy)  # nunca registrar cobertura futura: dejaría la caché estancada
+    meta.write_text(json.dumps({"start": str(start.date()), "end": str(end_cubierto.date())}))
     return serie
 
 

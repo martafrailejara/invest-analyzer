@@ -93,3 +93,20 @@ def test_post_sin_aportaciones(client, motor_falso):
     datos = dict(FORM_VALIDO, inicial_a="0", mensual_a="0")
     r = client.post("/simulador", data=datos)
     assert "alguna aportación debe ser mayor que 0" in r.get_data(as_text=True)
+
+
+def test_post_fecha_final_futura_se_recorta_con_aviso(client, motor_falso):
+    """Una fecha final en el futuro (p. ej. 2056 por errata) no se acepta en
+    silencio: se recorta a hoy y se muestra el aviso junto a los resultados."""
+    datos = dict(FORM_VALIDO, start="2025-07-13", end="2056-07-06")
+    r = client.post("/simulador", data=datos)
+    html = r.get_data(as_text=True)
+    assert "el rango se recorta" in html
+    assert "datos-grafico" in html  # la simulación corre igualmente, hasta hoy
+
+
+def test_inputs_de_fecha_limitados_a_hoy(client):
+    from datetime import date
+
+    html = client.get("/simulador").get_data(as_text=True)
+    assert f'max="{date.today().isoformat()}"' in html

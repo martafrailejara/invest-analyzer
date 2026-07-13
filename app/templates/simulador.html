@@ -16,11 +16,11 @@
   <div class="sim-global">
     <div class="campo">
       <label for="start">Desde</label>
-      <input type="date" id="start" name="start" value="{{ form['start'] }}">
+      <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
     </div>
     <div class="campo">
       <label for="end">Hasta</label>
-      <input type="date" id="end" name="end" value="{{ form['end'] }}">
+      <input type="date" id="end" name="end" value="{{ form['end'] }}" max="{{ hoy }}">
     </div>
     <button class="btn btn--primary" type="submit">Comparar escenarios</button>
   </div>

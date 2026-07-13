@@ -26,9 +26,10 @@ FORM_POR_DEFECTO = {
 }
 
 
-def _parsea(form) -> tuple[dict, list[str]]:
-    """Valida el formulario; devuelve (parámetros, errores)."""
+def _parsea(form) -> tuple[dict, list[str], list[str]]:
+    """Valida el formulario; devuelve (parámetros, errores, avisos)."""
     errores: list[str] = []
+    avisos: list[str] = []
     weights = parsea_activos(
         [(form.get(f"ticker_{i}", ""), form.get(f"peso_{i}", "")) for i in range(4)],
         errores,
@@ -37,18 +38,18 @@ def _parsea(form) -> tuple[dict, list[str]]:
     mensual = parsea_importe(form.get("mensual", ""), "aportación mensual", errores)
     if not errores and inicial == 0 and mensual == 0:
         errores.append("Alguna aportación (inicial o mensual) debe ser mayor que 0.")
-    parsea_fechas(form.get("start", ""), form.get("end", ""), errores)
+    end = parsea_fechas(form.get("start", ""), form.get("end", ""), errores, avisos)
     rebalance = parsea_rebalanceo(form.get("rebalance", ""), errores)
 
     params = {
         "weights": weights,
         "start": form.get("start", ""),
-        "end": form.get("end", ""),
+        "end": end,
         "initial_investment": inicial,
         "monthly_contribution": mensual,
         "rebalance_freq": rebalance,
     }
-    return params, errores
+    return params, errores, avisos
 
 
 def _prepara_resultado(res) -> dict:
@@ -85,14 +86,14 @@ def page():
         return render_template("backtester.html", form=FORM_POR_DEFECTO, resultado=None, errores=[], avisos=[])
 
     form = {campo: request.form.get(campo, "") for campo in FORM_POR_DEFECTO}
-    params, errores = _parsea(request.form)
-    resultado, avisos = None, []
+    params, errores, avisos = _parsea(request.form)
+    resultado = None
     if not errores:
         try:
             with warnings.catch_warnings(record=True) as capturados:
                 warnings.simplefilter("always")
                 res = motor.run(**params)
-            avisos = [str(w.message) for w in capturados]
+            avisos = avisos + [str(w.message) for w in capturados]
             resultado = _prepara_resultado(res)
         except ValueError as exc:
             errores.append(str(exc))

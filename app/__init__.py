@@ -1,8 +1,15 @@
+from datetime import date
+
 from flask import Flask
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
+
+    @app.context_processor
+    def _globales():
+        return {"hoy": date.today().isoformat()}
+
     from app.backtester_web import backtester
     from app.simulator_web import simulator
     from app.views import pages

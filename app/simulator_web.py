@@ -38,8 +38,9 @@ def _escenario_vacio(form, letra: str) -> bool:
     return not any((form.get(c, "") or "").strip() for c in campos)
 
 
-def _parsea(form) -> tuple[list[Scenario], str, str, list[str]]:
+def _parsea(form) -> tuple[list[Scenario], str, str, list[str], list[str]]:
     errores: list[str] = []
+    avisos: list[str] = []
     escenarios: list[Scenario] = []
 
     for letra in LETRAS:
@@ -62,9 +63,9 @@ def _parsea(form) -> tuple[list[Scenario], str, str, list[str]]:
             initial_investment=inicial, monthly_contribution=mensual, rebalance_freq=rebalance,
         ))
 
-    start, end = form.get("start", ""), form.get("end", "")
-    parsea_fechas(start, end, errores)
-    return escenarios, start, end, errores
+    start = form.get("start", "")
+    end = parsea_fechas(start, form.get("end", ""), errores, avisos)
+    return escenarios, start, end, errores, avisos
 
 
 def _prepara(resultados) -> dict:
@@ -112,14 +113,14 @@ def page():
         return render_template("simulador.html", form=FORM_POR_DEFECTO, resultado=None, errores=[], avisos=[])
 
     form = {campo: request.form.get(campo, "") for campo in FORM_POR_DEFECTO}
-    escenarios, start, end, errores = _parsea(request.form)
-    resultado, avisos = None, []
+    escenarios, start, end, errores, avisos = _parsea(request.form)
+    resultado = None
     if not errores:
         try:
             with warnings.catch_warnings(record=True) as capturados:
                 warnings.simplefilter("always")
                 resultados = motor.run(escenarios, start, end)
-            avisos = sorted({str(w.message) for w in capturados})
+            avisos = avisos + sorted({str(w.message) for w in capturados})
             resultado = _prepara(resultados)
         except ValueError as exc:
             errores.append(str(exc))
