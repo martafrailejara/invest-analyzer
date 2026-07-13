@@ -221,6 +221,27 @@ a { color: inherit; }
   .cartera-cabecera { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* matriz de correlación (heatmap diverente, theme-aware vía color-mix) */
+.heatmap { display: grid; grid-template-columns: minmax(4.5rem, auto) repeat(var(--n), minmax(0, 1fr));
+           gap: 2px; margin-top: var(--space-sm); }
+.heatmap__cell { display: flex; align-items: center; justify-content: center;
+                 padding: var(--space-xs); font-family: var(--font-mono); font-size: var(--text-xs);
+                 border-radius: 4px; min-height: 2.4rem; }
+.heatmap__head { color: var(--color-muted); }
+.heatmap__val { color: var(--color-ink); font-variant-numeric: tabular-nums; }
+.bucket3  { background: color-mix(in oklab, var(--chart-value) 62%, var(--color-paper)); color: var(--color-accent-ink); }
+.bucket2  { background: color-mix(in oklab, var(--chart-value) 40%, var(--color-paper)); }
+.bucket1  { background: color-mix(in oklab, var(--chart-value) 18%, var(--color-paper)); }
+.bucket0  { background: var(--color-paper-2); }
+.bucket-1 { background: color-mix(in oklab, var(--chart-activos) 18%, var(--color-paper)); }
+.bucket-2 { background: color-mix(in oklab, var(--chart-activos) 40%, var(--color-paper)); }
+.bucket-3 { background: color-mix(in oklab, var(--chart-activos) 62%, var(--color-paper)); color: var(--color-accent-ink); }
+.heatmap-leyenda { display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-sm);
+                   font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+.heatmap-leyenda span:not(.leyenda-txt) { padding: 2px 8px; border-radius: 4px; color: var(--color-ink); }
+.heatmap-leyenda .leyenda-txt { margin-left: var(--space-xs); }
+
+/* matriz de correlación */
 .graficos-fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); }
 .grafico-card .panel__title { margin-bottom: var(--space-xs); }
 .lienzo--mini { height: 12rem !important; }

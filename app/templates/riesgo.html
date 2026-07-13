@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Riesgo · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Análisis de riesgo</h1>
+  <p>Métricas de riesgo de la cartera frente a un índice y la correlación entre sus activos. Descriptivo: mide el pasado, no predice.</p>
+</div>
+
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Cartera</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="activos">
+      {% for i in range(4) %}
+      <div class="activo-fila">
+        <div class="campo">
+          {% if loop.first %}<label for="ticker_{{ i }}">Activo (ticker) y peso %</label>{% endif %}
+          <input type="text" id="ticker_{{ i }}" name="ticker_{{ i }}"
+                 value="{{ form['ticker_' ~ i] }}" placeholder="SXR8.DE"
+                 autocomplete="off" spellcheck="false">
+        </div>
+        <div class="campo">
+          {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}
+          <input type="number" name="peso_{{ i }}" value="{{ form['peso_' ~ i] }}"
+                 placeholder="50" min="0" max="100" step="0.1"
+                 aria-label="Peso % del activo {{ i + 1 }}">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-grid">
+      <div class="campo span-2">
+        <label for="benchmark">Índice de referencia (para la beta)</label>
+        <input type="text" id="benchmark" name="benchmark" value="{{ form['benchmark'] }}"
+               placeholder="EUNL.DE" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="campo">
+        <label for="start">Desde</label>
+        <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
+      </div>
+      <div class="campo">
+        <label for="end">Hasta</label>
+        <input type="date" id="end" name="end" value="{{ form['end'] }}" max="{{ hoy }}">
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Analizar riesgo</button>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if resultado %}
+      <table class="tabla-comp">
+        <thead>
+          <tr><th>Métrica</th>{% for f in resultado.filas %}<th>{{ f.nombre }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+          {% for clave, nombre in resultado.metricas %}
+          <tr><td>{{ nombre }}</td>{% for f in resultado.filas %}<td>{{ f[clave] }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="grafico-card">
+        <p class="panel__title">Matriz de correlación</p>
+        <div class="heatmap" style="--n: {{ resultado.tickers | length }}">
+          <div class="heatmap__cell heatmap__corner" aria-hidden="true"></div>
+          {% for t in resultado.tickers %}<div class="heatmap__cell heatmap__head">{{ t }}</div>{% endfor %}
+          {% for fila in resultado.heatmap %}
+          <div class="heatmap__cell heatmap__head">{{ resultado.tickers[loop.index0] }}</div>
+          {% for celda in fila %}
+          <div class="heatmap__cell heatmap__val bucket{{ celda.bucket }}"
+               title="{{ resultado.tickers[loop.index0] }}">{{ celda.v }}</div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+        <div class="heatmap-leyenda">
+          <span class="bucket-3">−1</span>
+          <span class="bucket-1">0</span>
+          <span class="bucket3">+1</span>
+          <span class="leyenda-txt">correlación de retornos diarios</span>
+        </div>
+      </div>
+      <p class="notice">{{ resultado.sesiones }} sesiones analizadas. VaR/CVaR históricos al 95% sobre retornos diarios.
+      Correlación alta entre activos reduce el efecto de diversificación.</p>
+
+      {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    {% else %}
+      <div class="vacio">
+        <p>Define la cartera y un índice de referencia, y pulsa <code>Analizar riesgo</code>.<br>
+        Verás Sharpe, Sortino, VaR/CVaR, beta y la correlación entre tus activos.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

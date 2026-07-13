@@ -80,3 +80,45 @@ def test_sharpe_ratio_baja_con_tasa_libre():
 def test_sharpe_ratio_sin_dispersion_es_nan():
     r = serie([0.01, 0.01, 0.01], ["2024-01-01", "2024-01-02", "2024-01-03"])
     assert math.isnan(metrics.sharpe_ratio(r))
+
+
+def test_downside_deviation():
+    # retornos [0.02, -0.01, 0.03, -0.02]: solo cuentan -0.01 y -0.02
+    # media de cuadrados = (0 + 0.0001 + 0 + 0.0004)/4 = 0.000125 -> sqrt
+    r = serie([0.02, -0.01, 0.03, -0.02],
+              ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04"])
+    assert metrics.downside_deviation(r) == pytest.approx(math.sqrt(0.000125))
+
+
+def test_sortino_mayor_que_sharpe_con_cola_positiva():
+    # una serie con más dispersión al alza que a la baja: Sortino > Sharpe
+    r = serie([0.05, -0.01, 0.04, -0.01, 0.06],
+              ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"])
+    assert metrics.sortino_ratio(r) > metrics.sharpe_ratio(r)
+
+
+def test_value_at_risk_historico():
+    # 20 retornos: -0.10..0.09; el cuantil 5% cae en el peor extremo
+    r = serie([(-10 + i) / 100 for i in range(20)],
+              [f"2024-01-{d:02d}" for d in range(1, 21)])
+    # np.quantile con 5% sobre 20 puntos interpola cerca de -0.10
+    assert metrics.value_at_risk(r, level=0.05) == pytest.approx(-0.0905, abs=1e-4)
+
+
+def test_cvar_peor_que_var():
+    r = serie([(-10 + i) / 100 for i in range(20)],
+              [f"2024-01-{d:02d}" for d in range(1, 21)])
+    var = metrics.value_at_risk(r, level=0.10)
+    cvar = metrics.conditional_var(r, level=0.10)
+    assert cvar <= var  # la media de la cola es aún más negativa
+
+
+def test_beta_calculada_a_mano():
+    # cartera = 2 × índice exactamente -> beta = 2
+    indice = serie([0.01, -0.02, 0.03, -0.01, 0.02],
+                   ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"])
+    cartera = indice * 2
+    assert metrics.beta(cartera, indice) == pytest.approx(2.0)
+    # sin correlación con el índice -> beta ~ 0 no se garantiza, pero
+    # un activo idéntico al índice tiene beta 1
+    assert metrics.beta(indice, indice) == pytest.approx(1.0)

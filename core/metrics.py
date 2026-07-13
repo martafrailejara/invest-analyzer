@@ -69,3 +69,54 @@ def sharpe_ratio(
     if desviacion == 0:
         return float("nan")
     return exceso.mean() / desviacion * np.sqrt(periods_per_year)
+
+
+def downside_deviation(returns, mar_periodo: float = 0.0):
+    """Desviación de los retornos por debajo de un mínimo aceptable (MAR).
+
+    Raíz de la media de los cuadrados de los excesos negativos (los positivos
+    cuentan como 0). Sin anualizar.
+    """
+    negativos = np.minimum(returns - mar_periodo, 0.0)
+    return float(np.sqrt(np.mean(np.square(negativos))))
+
+
+def sortino_ratio(
+    returns,
+    risk_free_annual: float = 0.0,
+    periods_per_year: int = TRADING_DAYS_PER_YEAR,
+):
+    """Como Sharpe pero penalizando solo la volatilidad a la baja."""
+    rf_periodo = (1 + risk_free_annual) ** (1 / periods_per_year) - 1
+    dd = downside_deviation(returns, rf_periodo)
+    if dd == 0:
+        return float("nan")
+    exceso_medio = (returns - rf_periodo).mean()
+    return exceso_medio / dd * np.sqrt(periods_per_year)
+
+
+def value_at_risk(returns, level: float = 0.05):
+    """VaR histórico: el cuantil ``level`` de los retornos (número negativo).
+
+    VaR 5% = "en el 5% de los peores periodos se pierde al menos |esto|".
+    """
+    return float(np.quantile(returns, level))
+
+
+def conditional_var(returns, level: float = 0.05):
+    """CVaR / expected shortfall: media de los retornos peores que el VaR."""
+    umbral = np.quantile(returns, level)
+    cola = returns[returns <= umbral]
+    return float(cola.mean()) if len(cola) else float(umbral)
+
+
+def beta(returns, benchmark_returns):
+    """Beta frente a un índice: cov(cartera, índice) / var(índice).
+
+    Ambas series deben compartir índice; se alinean por intersección.
+    """
+    r, b = returns.align(benchmark_returns, join="inner")
+    varianza = b.var(ddof=1)
+    if varianza == 0:
+        return float("nan")
+    return float(r.cov(b) / varianza)
