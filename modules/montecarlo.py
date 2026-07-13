@@ -49,6 +49,7 @@ def project(
     initial: float = 0.0,
     n_sims: int = 1000,
     seed: int | None = None,
+    objetivo: float | None = None,
 ) -> dict:
     if years < 1:
         raise ValueError("El horizonte debe ser de al menos 1 año")
@@ -88,6 +89,7 @@ def project(
         "terminal": {p: float(np.percentile(terminal, p)) for p in PERCENTILES},
         "prob_ganancia": float(np.mean(terminal > aportado)),
         "prob_doblar": float(np.mean(terminal > 2 * aportado)),
+        "prob_objetivo": float(np.mean(terminal >= objetivo)) if objetivo else None,
         "n_sims": n_sims,
         "meses_historico": int(len(mensuales)),
         "ret_mensual_medio": float(mensuales.mean()),

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Metas · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Metas financieras</h1>
+  <p>"Quiero X € en el año Y": tu progreso real y la probabilidad estadística de llegar, simulando miles de futuros con tu cartera actual. Basado en el pasado — no es una predicción.</p>
+</div>
+
+{% if sin_csv %}
+<section class="vacio">
+  <p>No hay export de transacciones en <code>data/transacciones.csv</code>.<br>
+  La meta se mide contra tu cartera real: guarda ahí tu export para empezar.</p>
+</section>
+{% else %}
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Tu meta</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="form-grid">
+      <div class="campo span-2">
+        <label for="importe">Quiero llegar a €</label>
+        <input type="number" id="importe" name="importe" value="{{ form['importe'] }}" min="1" step="1000">
+      </div>
+      <div class="campo">
+        <label for="anio">En el año</label>
+        <input type="number" id="anio" name="anio" value="{{ form['anio'] }}"
+               min="{{ hoy[:4] | int + 1 }}" max="{{ hoy[:4] | int + 60 }}" step="1">
+      </div>
+      <div class="campo">
+        <label for="mensual">Aportando €/mes</label>
+        <input type="number" id="mensual" name="mensual" value="{{ form['mensual'] }}" min="0" step="50">
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Calcular probabilidad</button>
+    <p class="ayuda">Se guarda como tu meta activa y se simula con los pesos actuales de tu cartera.</p>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if resultado %}
+      <div class="hero-figura">
+        <p class="etiqueta">Probabilidad de llegar a {{ resultado.objetivo }} en {{ resultado.anio }}</p>
+        <p class="valor">{{ resultado.prob_base }}</p>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><p class="etiqueta">Cartera hoy</p><p class="valor">{{ resultado.valor_actual }}</p></div>
+        <div class="tile"><p class="etiqueta">Progreso</p><p class="valor">{{ resultado.progreso }}</p></div>
+        <div class="tile"><p class="etiqueta">Horizonte</p><p class="valor">{{ resultado.anios }} años</p></div>
+      </div>
+
+      <div class="progreso-barra" role="img" aria-label="Progreso hacia la meta: {{ resultado.progreso }}">
+        <div class="progreso-barra__relleno" style="width: {{ resultado.progreso_raw }}%"></div>
+      </div>
+
+      <table class="tabla-comp">
+        <thead>
+          <tr><th>Si aportas</th><th>Probabilidad</th><th>Mediana al llegar</th></tr>
+        </thead>
+        <tbody>
+          {% for v in resultado.variantes %}
+          <tr {% if v.base %}class="fila-base"{% endif %}>
+            <td>{{ v.aportacion }} ({{ v.factor }})</td>
+            <td>{{ v.prob }}</td>
+            <td>{{ v.mediana }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p class="notice">1.000 simulaciones por variante, bootstrap de {{ resultado.meses_historico }} meses
+      de histórico de tus propios activos. La fila destacada es tu aportación actual.</p>
+      {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    {% else %}
+      <div class="vacio">
+        <p>Define tu meta y pulsa <code>Calcular probabilidad</code>.<br>
+        Verás también cuánto cambia la probabilidad aportando la mitad o el doble.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}
