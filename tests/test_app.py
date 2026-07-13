@@ -105,6 +105,14 @@ def test_post_sin_activos(client, motor_falso):
     assert "al menos un activo" in r.get_data(as_text=True)
 
 
+def test_post_con_benchmark(client, motor_falso):
+    datos = dict(FORM_VALIDO, benchmark="EUNL.DE")
+    r = client.post("/backtester", data=datos)
+    html = r.get_data(as_text=True)
+    assert "Benchmark EUNL.DE" in html
+    assert '"benchmark"' in html  # dataset extra en el JSON del gráfico
+
+
 def test_post_conserva_lo_introducido(client, motor_falso):
     datos = dict(FORM_VALIDO, ticker_0="ZZZ.MC", peso_0="150")
     r = client.post("/backtester", data=datos)

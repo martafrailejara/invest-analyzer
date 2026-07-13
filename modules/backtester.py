@@ -17,6 +17,7 @@ def run(
     *,
     initial_investment: float = 0.0,
     monthly_contribution: float = 0.0,
+    contribution_months: int | None = None,
     rebalance_freq: str | None = None,
     cache_dir=None,
     downloader=None,
@@ -33,6 +34,7 @@ def run(
         weights=weights,
         initial_investment=initial_investment,
         monthly_contribution=monthly_contribution,
+        contribution_months=contribution_months,
         rebalance_freq=rebalance_freq,
     )
     return engine.run_backtest(prices, strategy)

@@ -22,13 +22,13 @@ FORM_POR_DEFECTO = {
     "end": date.today().isoformat(),
     # Escenario A — el caso del documento: 10.000 € de golpe…
     "nombre_a": "Aportación única", "ticker_a_0": "SXR8.DE", "peso_a_0": "100",
-    "ticker_a_1": "", "peso_a_1": "", "inicial_a": "10000", "mensual_a": "0", "rebalance_a": "",
+    "ticker_a_1": "", "peso_a_1": "", "inicial_a": "10000", "mensual_a": "0", "meses_a": "", "rebalance_a": "",
     # …frente a repartirlos en DCA durante 12 meses
     "nombre_b": "DCA 12 meses", "ticker_b_0": "SXR8.DE", "peso_b_0": "100",
-    "ticker_b_1": "", "peso_b_1": "", "inicial_b": "0", "mensual_b": "833,33", "rebalance_b": "",
+    "ticker_b_1": "", "peso_b_1": "", "inicial_b": "0", "mensual_b": "833,33", "meses_b": "12", "rebalance_b": "",
     # Escenario C opcional (vacío = no se ejecuta)
     "nombre_c": "", "ticker_c_0": "", "peso_c_0": "",
-    "ticker_c_1": "", "peso_c_1": "", "inicial_c": "", "mensual_c": "", "rebalance_c": "",
+    "ticker_c_1": "", "peso_c_1": "", "inicial_c": "", "mensual_c": "", "meses_c": "", "rebalance_c": "",
 }
 
 
@@ -58,9 +58,19 @@ def _parsea(form) -> tuple[list[Scenario], str, str, list[str], list[str]]:
         if not errores and inicial == 0 and mensual == 0:
             errores.append(f"{contexto}alguna aportación debe ser mayor que 0.")
         rebalance = parsea_rebalanceo(form.get(f"rebalance_{letra}", ""), errores)
+        meses_txt = (form.get(f"meses_{letra}", "") or "").strip()
+        meses = None
+        if meses_txt:
+            try:
+                meses = int(meses_txt)
+                if meses < 1:
+                    errores.append(f"{contexto}los meses de aportación deben ser al menos 1.")
+            except ValueError:
+                errores.append(f"{contexto}los meses de aportación no son un número entero.")
         escenarios.append(Scenario(
             name=nombre, weights=weights,
-            initial_investment=inicial, monthly_contribution=mensual, rebalance_freq=rebalance,
+            initial_investment=inicial, monthly_contribution=mensual,
+            contribution_months=meses, rebalance_freq=rebalance,
         ))
 
     start = form.get("start", "")

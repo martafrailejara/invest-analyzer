@@ -61,6 +61,11 @@
                value="{{ form['mensual_' ~ letra] }}">
       </div>
       <div class="campo">
+        <label for="meses_{{ letra }}">Meses aportando</label>
+        <input type="number" id="meses_{{ letra }}" name="meses_{{ letra }}"
+               value="{{ form['meses_' ~ letra] }}" min="1" step="1" placeholder="todo el rango">
+      </div>
+      <div class="campo">
         <label for="rebalance_{{ letra }}">Rebalanceo</label>
         <select id="rebalance_{{ letra }}" name="rebalance_{{ letra }}">
           {% for valor, nombre in [('', 'Sin rebalanceo'), ('M', 'Mensual'), ('Q', 'Trimestral'), ('Y', 'Anual')] %}

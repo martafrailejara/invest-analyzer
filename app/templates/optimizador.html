@@ -46,6 +46,7 @@
       <div class="grafico-card">
         <div class="lienzo"><canvas id="grafico" role="img"
           aria-label="Frontera eficiente: volatilidad frente a retorno anual, con los activos individuales y las carteras de mínima varianza y máximo Sharpe"></canvas></div>
+        <p class="notice" id="seleccion-frontera">Haz click en un punto de la frontera para ver su composición.</p>
       </div>
 
       <table class="tabla-comp">
@@ -175,6 +176,14 @@
       maintainAspectRatio: false,
       animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
       interaction: { mode: "nearest", intersect: false },
+      onClick(evento, elementos, chart) {
+        const el = chart.getElementsAtEventForMode(evento, "nearest", { intersect: false }, true)
+          .find((e) => e.datasetIndex === 0);
+        if (!el) return;
+        const p = datos.frontera[el.index];
+        document.getElementById("seleccion-frontera").textContent =
+          "Cartera seleccionada — retorno " + pctes(p.y) + " · volatilidad " + pctes(p.x) + " · " + p.pesos;
+      },
       plugins: {
         legend: {
           position: "top",

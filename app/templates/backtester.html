@@ -52,8 +52,13 @@
         <label for="end">Hasta</label>
         <input type="date" id="end" name="end" value="{{ form['end'] }}" max="{{ hoy }}">
       </div>
-      <div class="campo span-2">
-        <label for="rebalance">Rebalanceo a pesos objetivo</label>
+      <div class="campo">
+        <label for="benchmark">Comparar con (opcional)</label>
+        <input type="text" id="benchmark" name="benchmark" value="{{ form['benchmark'] }}"
+               placeholder="EUNL.DE" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="campo">
+        <label for="rebalance">Rebalanceo</label>
         <select id="rebalance" name="rebalance">
           {% for valor, nombre in [('', 'Sin rebalanceo'), ('M', 'Mensual'), ('Q', 'Trimestral'), ('Y', 'Anual')] %}
           <option value="{{ valor }}" {% if form['rebalance'] == valor %}selected{% endif %}>{{ nombre }}</option>
@@ -99,6 +104,10 @@
         </table>
       </details>
 
+      {% if resultado.benchmark %}
+      <p class="notice">Benchmark {{ resultado.benchmark.nombre }} con las mismas aportaciones:
+      valor final {{ resultado.benchmark.final }} · CAGR {{ resultado.benchmark.cagr }}.</p>
+      {% endif %}
       {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
     {% else %}
       <div class="vacio">
@@ -163,6 +172,19 @@
           pointHoverBorderWidth: 2,
           borderJoinStyle: "round",
         },
+        ...(datos.benchmark ? [{
+          label: "Benchmark " + datos.benchmark.nombre,
+          data: datos.benchmark.values,
+          borderColor: tok("--chart-esc-c"),
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-esc-c"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          borderJoinStyle: "round",
+          spanGaps: true,
+        }] : []),
         {
           label: "Total aportado",
           data: datos.invested,

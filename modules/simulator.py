@@ -20,6 +20,7 @@ class Scenario:
     weights: Mapping[str, float]
     initial_investment: float = 0.0
     monthly_contribution: float = 0.0
+    contribution_months: int | None = None
     rebalance_freq: str | None = None
 
 
@@ -43,6 +44,7 @@ def run(
                 end,
                 initial_investment=sc.initial_investment,
                 monthly_contribution=sc.monthly_contribution,
+                contribution_months=sc.contribution_months,
                 rebalance_freq=sc.rebalance_freq,
                 cache_dir=cache_dir,
                 downloader=downloader,

@@ -23,6 +23,7 @@ FORM_POR_DEFECTO = {
     "start": "2015-01-01",
     "end": date.today().isoformat(),
     "rebalance": "Y",
+    "benchmark": "",
 }
 
 
@@ -40,6 +41,7 @@ def _parsea(form) -> tuple[dict, list[str], list[str]]:
         errores.append("Alguna aportación (inicial o mensual) debe ser mayor que 0.")
     end = parsea_fechas(form.get("start", ""), form.get("end", ""), errores, avisos)
     rebalance = parsea_rebalanceo(form.get("rebalance", ""), errores)
+    benchmark = (form.get("benchmark", "") or "").strip().upper() or None
 
     params = {
         "weights": weights,
@@ -49,7 +51,7 @@ def _parsea(form) -> tuple[dict, list[str], list[str]]:
         "monthly_contribution": mensual,
         "rebalance_freq": rebalance,
     }
-    return params, errores, avisos
+    return params, benchmark, errores, avisos
 
 
 def _prepara_resultado(res) -> dict:
@@ -86,15 +88,30 @@ def page():
         return render_template("backtester.html", form=FORM_POR_DEFECTO, resultado=None, errores=[], avisos=[])
 
     form = {campo: request.form.get(campo, "") for campo in FORM_POR_DEFECTO}
-    params, errores, avisos = _parsea(request.form)
+    params, benchmark, errores, avisos = _parsea(request.form)
     resultado = None
     if not errores:
         try:
             with warnings.catch_warnings(record=True) as capturados:
                 warnings.simplefilter("always")
                 res = motor.run(**params)
-            avisos = avisos + [str(w.message) for w in capturados]
+                res_bench = None
+                if benchmark:
+                    res_bench = motor.run(**{**params, "weights": {benchmark: 1.0}})
+            avisos = avisos + sorted({str(w.message) for w in capturados})
             resultado = _prepara_resultado(res)
+            if res_bench is not None:
+                m_bench = res_bench.metrics()
+                valores = res_bench.value.reindex(res.value.index).ffill()
+                resultado["benchmark"] = {
+                    "nombre": benchmark,
+                    "final": eur(m_bench["final_value"]),
+                    "cagr": pct(m_bench["cagr"]),
+                }
+                resultado["chart"]["benchmark"] = {
+                    "nombre": benchmark,
+                    "values": [None if math.isnan(v) else round(v, 2) for v in valores.tolist()],
+                }
         except ValueError as exc:
             errores.append(str(exc))
         except Exception:

@@ -110,3 +110,9 @@ def test_inputs_de_fecha_limitados_a_hoy(client):
 
     html = client.get("/simulador").get_data(as_text=True)
     assert f'max="{date.today().isoformat()}"' in html
+
+
+def test_post_meses_invalidos(client, motor_falso):
+    datos = dict(FORM_VALIDO, meses_b="cero")
+    r = client.post("/simulador", data=datos)
+    assert "no son un número entero" in r.get_data(as_text=True)

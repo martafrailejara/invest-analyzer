@@ -30,6 +30,8 @@ class Strategy:
     - ``weights``: pesos objetivo por ticker; deben sumar 1, sin cortos.
     - ``initial_investment``: aportación única al inicio.
     - ``monthly_contribution``: aportación el primer día de negociación de cada mes.
+    - ``contribution_months``: None (todo el rango) o número de meses durante
+      los que se aporta — "repartir X en DCA durante 12 meses".
     - ``rebalance_freq``: None (nunca), "M", "Q" o "Y" — el rebalanceo se
       ejecuta el primer día de negociación de cada periodo.
     """
@@ -37,6 +39,7 @@ class Strategy:
     weights: Mapping[str, float]
     initial_investment: float = 0.0
     monthly_contribution: float = 0.0
+    contribution_months: int | None = None
     rebalance_freq: str | None = None
 
     @classmethod
@@ -108,6 +111,8 @@ def run_backtest(prices: pd.DataFrame, strategy: Strategy) -> BacktestResult:
         )
 
     dias_aportacion = _first_days(px.index, "M") if strategy.monthly_contribution else set()
+    if strategy.contribution_months is not None:
+        dias_aportacion = set(sorted(dias_aportacion)[: strategy.contribution_months])
     dias_rebalanceo = (
         _first_days(px.index, strategy.rebalance_freq) - {px.index[0]}
         if strategy.rebalance_freq
@@ -160,6 +165,8 @@ def _validate(prices: pd.DataFrame, strategy: Strategy, weights: dict) -> None:
         raise ValueError("La estrategia no invierte nada: initial_investment y monthly_contribution a 0")
     if strategy.rebalance_freq is not None and strategy.rebalance_freq not in FREQ_VALIDAS:
         raise ValueError(f"rebalance_freq debe ser None o una de {sorted(FREQ_VALIDAS)}")
+    if strategy.contribution_months is not None and strategy.contribution_months < 1:
+        raise ValueError("contribution_months debe ser al menos 1 (o None para todo el rango)")
 
 
 def _first_days(index: pd.DatetimeIndex, freq: str) -> set:

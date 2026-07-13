@@ -133,3 +133,24 @@ def test_backtester_modulo_usa_capa_de_datos(tmp_path):
     )
     assert res.value.iloc[-1] > 1000  # el precio sintético siempre sube
     assert res.metrics()["max_drawdown"] == pytest.approx(0.0)
+
+
+def test_aportacion_limitada_a_n_meses():
+    """DCA de 3 meses en un rango de 6: solo se aporta en los 3 primeros."""
+    fechas = pd.bdate_range("2024-01-01", "2024-06-28")
+    px = precios({"A": [100.0] * len(fechas)}, fechas)
+    res = engine.run_backtest(
+        px, Strategy(weights={"A": 1.0}, monthly_contribution=100, contribution_months=3)
+    )
+    assert res.invested.iloc[-1] == pytest.approx(300)
+    # sin límite habrían sido 6 aportaciones
+    sin_limite = engine.run_backtest(px, Strategy.dca({"A": 1.0}, monthly_contribution=100))
+    assert sin_limite.invested.iloc[-1] == pytest.approx(600)
+
+
+def test_contribution_months_invalido():
+    px = precios({"A": [100, 110]}, ["2024-01-01", "2024-01-02"])
+    with pytest.raises(ValueError, match="al menos 1"):
+        engine.run_backtest(
+            px, Strategy(weights={"A": 1.0}, monthly_contribution=100, contribution_months=0)
+        )
