@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Fiscalidad · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Fiscalidad</h1>
+  <p>Plusvalías realizadas con criterio FIFO y simulador de venta con los tramos de la base del ahorro.
+  <strong>Estimación simplificada, no asesoría fiscal</strong>: no incluye compensaciones, otras rentas del ahorro ni la regla de los dos meses.</p>
+</div>
+
+{% if sin_csv %}
+<section class="vacio">
+  <p>No hay export de transacciones en <code>data/transacciones.csv</code>.<br>
+  Los cálculos FIFO parten de tu histórico real: guarda ahí tu export.</p>
+</section>
+{% else %}
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Simular una venta hoy</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="form-grid">
+      <div class="campo span-2">
+        <label for="symbol">Activo</label>
+        <select id="symbol" name="symbol">
+          {% for s in resultado.simbolos %}
+          <option value="{{ s }}" {% if form.symbol == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="unidades">Unidades a vender</label>
+        <input type="text" inputmode="decimal" id="unidades" name="unidades" value="{{ form.unidades }}">
+      </div>
+      <div class="campo">
+        <label for="precio">Precio de venta €</label>
+        <input type="text" inputmode="decimal" id="precio" name="precio" value="{{ form.precio }}"
+               placeholder="último cierre">
+        <p class="ayuda">Vacío = último cierre de mercado.</p>
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Simular venta</button>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if venta %}
+      <div class="hero-figura">
+        <p class="etiqueta">Cuota estimada del ahorro por vender {{ venta.unidades }} uds de {{ venta.symbol }}</p>
+        <p class="valor">{{ venta.cuota }}</p>
+      </div>
+      <div class="tiles">
+        <div class="tile"><p class="etiqueta">Importe de la venta</p><p class="valor">{{ venta.importe }}</p></div>
+        <div class="tile"><p class="etiqueta">Coste FIFO</p><p class="valor">{{ venta.coste_fifo }}</p></div>
+        <div class="tile"><p class="etiqueta">Plusvalía</p><p class="valor {% if venta.negativa %}negativo{% endif %}">{{ venta.plusvalia }}</p></div>
+        <div class="tile"><p class="etiqueta">Neto tras cuota</p><p class="valor">{{ venta.neto }}</p></div>
+      </div>
+      <details class="tabla-anual" open>
+        <summary>Lotes consumidos (FIFO)</summary>
+        <table>
+          <thead><tr><th>Comprado el</th><th>Unidades</th><th>Coste/ud</th></tr></thead>
+          <tbody>
+            {% for l in venta.lotes %}
+            <tr><td>{{ l.fecha }}</td><td>{{ l.unidades }}</td><td>{{ l.coste_unitario }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+    {% endif %}
+
+    {% if resultado.por_anio %}
+    <table class="tabla-comp">
+      <thead><tr><th>Año</th><th>Plusvalía realizada</th><th>Cuota estimada</th></tr></thead>
+      <tbody>
+        {% for fila in resultado.por_anio %}
+        <tr><td>{{ fila.anio }}</td>
+        <td {% if fila.negativa %}class="negativo"{% endif %}>{{ fila.plusvalia }}</td>
+        <td>{{ fila.cuota }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="notice">Sin ventas realizadas todavía: no hay plusvalías que declarar.</p>
+    {% endif %}
+
+    <details class="tabla-anual">
+      <summary>Lotes vivos en cartera ({{ resultado.lotes | length }})</summary>
+      <table>
+        <thead><tr><th>Activo</th><th>Comprado el</th><th>Unidades</th><th>Coste/ud (con comisión)</th></tr></thead>
+        <tbody>
+          {% for l in resultado.lotes %}
+          <tr><td>{{ l.symbol }}</td><td>{{ l.fecha }}</td><td>{{ l.unidades }}</td><td>{{ l.coste_unitario }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+
+    <p class="notice">Tramos del ahorro aplicados: 19 % hasta 6.000 · 21 % hasta 50.000 · 23 % hasta 200.000 ·
+    27 % hasta 300.000 · 30 % en adelante. Cuota sobre la ganancia aislada.</p>
+    {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

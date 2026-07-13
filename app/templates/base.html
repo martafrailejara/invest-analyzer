@@ -25,6 +25,7 @@
           (url_for('risk.page'), 'Riesgo'),
           (url_for('montecarlo.page'), 'Monte Carlo'),
           (url_for('dividends.page'), 'Dividendos'),
+          (url_for('taxes.page'), 'Fiscalidad'),
           (url_for('anomalies.page'), 'Anomalías'),
           (url_for('saved.page'), 'Guardados'),
         ] %}
@@ -55,6 +56,7 @@
         <button class="cmdk__item" data-href="{{ url_for('risk.page') }}">Análisis de riesgo <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('montecarlo.page') }}">Proyección Monte Carlo <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('dividends.page') }}">Agregador de dividendos <span class="estado">activo</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('taxes.page') }}">Fiscalidad (FIFO y cuota) <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('anomalies.page') }}">Detector de anomalías <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('saved.page') }}">Análisis guardados <span class="estado">activo</span></button>
       </div>

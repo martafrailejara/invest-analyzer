@@ -16,6 +16,8 @@ GRUPOS = [
          "\"Quiero X € en el año Y\": progreso real y probabilidad Monte Carlo de llegar, con variantes de aportación."),
         ("dividends.page", "Dividendos",
          "Lo cobrado por año y posición, yield on cost y la proyección simple a 12 meses."),
+        ("taxes.page", "Fiscalidad",
+         "Plusvalías realizadas con FIFO y simulador de venta con la cuota estimada del ahorro. Estimación, no asesoría fiscal."),
     ]),
     ("Simular", [
         ("backtester.page", "Backtester",

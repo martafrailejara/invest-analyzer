@@ -62,7 +62,11 @@ La página de dividendos lee la cartera real de `data/transacciones.csv`; como a
 
 Módulos, todos funcionales:
 
-1. **Mi cartera** (portada) — posiciones reales valoradas a mercado, curva valor vs aportado, ganancia de mercado aislada, flujo mensual, P&L por posición e historial.
+0. **Landing** — portada que organiza los módulos por intención; navegación ⌘K y catálogo de tickers con autocompletado y nombre al pasar el ratón.
+1. **Mi cartera** — posiciones reales valoradas a mercado, curva valor vs aportado, ganancia de mercado aislada, flujo mensual, P&L por posición e historial.
+1b. **Chequeo de cartera** — recomendaciones estadísticas con severidad: desviación de pesos objetivo, concentración, correlaciones, eficiencia vs frontera, comisiones, ritmo de DCA y anomalías recientes (no es asesoramiento profesional).
+1c. **Metas financieras** — progreso hacia "X € en el año Y" y probabilidad Monte Carlo de llegar, con variantes de aportación.
+1d. **Fiscalidad** — plusvalías realizadas con FIFO por lotes y simulador de venta con la cuota estimada de la base del ahorro (estimación, no asesoría fiscal).
 2. **Backtester** — estrategias parametrizables (buy & hold, DCA, rebalanceo, benchmark, DCA de N meses) con métricas time-weighted. Los backtests se pueden **guardar** (SQLite) y recargar.
 3. **Simulador qué-pasaría-si** — 2-3 escenarios comparados sobre el mismo motor.
 4. **Optimizador** — frontera eficiente de Markowitz (scipy, sin cortos), mínima varianza y máximo Sharpe, frontera clicable.
@@ -71,4 +75,4 @@ Módulos, todos funcionales:
 7. **Dividendos** — cobrado por año/posición, yield on cost y proyección a 12 meses.
 8. **Anomalías** — z-score sobre ventana previa (sin lookahead) o **Isolation Forest** (ML), con bandas de Bollinger.
 
-Construido por fases (0-7) con tests en cada capa: métricas y motor verificados contra casos calculados a mano, módulos contra propiedades y casos analíticos, y las páginas Flask con motores sustituidos (sin red).
+Los tickers en USD se convierten automáticamente a EUR (cruce EURUSD=X). Construido por fases (0-7) con tests en cada capa: métricas y motor verificados contra casos calculados a mano, módulos contra propiedades y casos analíticos, y las páginas Flask con motores sustituidos (sin red).

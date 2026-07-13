@@ -26,6 +26,7 @@ def create_app() -> Flask:
     from app.risk_web import risk
     from app.saved_web import saved
     from app.simulator_web import simulator
+    from app.taxes_web import taxes
 
     app.register_blueprint(landing)
     app.register_blueprint(holdings)
@@ -38,5 +39,6 @@ def create_app() -> Flask:
     app.register_blueprint(montecarlo)
     app.register_blueprint(dividends)
     app.register_blueprint(anomalies)
+    app.register_blueprint(taxes)
     app.register_blueprint(saved)
     return app
