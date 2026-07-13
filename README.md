@@ -18,7 +18,7 @@ Plataforma web de análisis y simulación de estrategias de inversión. Combina 
 ```
 app/      # Aplicación Flask (blueprints por módulo)
 core/     # Capa de datos y motor de cálculo compartido
-modules/  # Lógica de los cinco módulos funcionales
+modules/  # Lógica de los módulos funcionales
 tests/    # Tests (pytest, con fixtures sintéticos — nunca datos reales)
 data/     # Caché de mercado y datos personales (fuera del repo)
 ```
@@ -54,7 +54,7 @@ flask --app app run
 # http://127.0.0.1:5000 → formulario del backtester, gráfico y métricas
 ```
 
-El dashboard navega entre los 5 módulos con ⌘K (paleta de comandos). El diseño usa tokens propios ([app/static/tokens.css](app/static/tokens.css)) y Chart.js vendorizado en local.
+El dashboard navega entre los módulos con ⌘K (paleta de comandos). El diseño usa tokens propios ([app/static/tokens.css](app/static/tokens.css)) y Chart.js vendorizado en local.
 
 La página de dividendos lee la cartera real de `data/transacciones.csv`; como alternativa, `?cartera=ejemplo` usa [samples/transacciones_ejemplo.csv](samples/transacciones_ejemplo.csv) (activos de distribución, útil cuando la cartera real solo tiene ETFs de acumulación).
 
