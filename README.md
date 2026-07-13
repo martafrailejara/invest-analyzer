@@ -54,6 +54,8 @@ flask --app app run
 
 El dashboard navega entre los 5 módulos con ⌘K (paleta de comandos). El diseño usa tokens propios ([app/static/tokens.css](app/static/tokens.css)) y Chart.js vendorizado en local.
 
+La página de dividendos lee la cartera real de `data/transacciones.csv`; como alternativa, `?cartera=ejemplo` usa [samples/transacciones_ejemplo.csv](samples/transacciones_ejemplo.csv) (activos de distribución, útil cuando la cartera real solo tiene ETFs de acumulación).
+
 ## Estado
 
-En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted), Fase 3 (dashboard Flask con la página del backtester funcional), Fase 4 (simulador qué-pasaría-si con 2-3 escenarios comparados), Fase 5 (optimizador de cartera: frontera eficiente de Markowitz con scipy). Siguiente: Fase 6 (agregador de dividendos).
+En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted), Fase 3 (dashboard Flask con la página del backtester funcional), Fase 4 (simulador qué-pasaría-si con 2-3 escenarios comparados), Fase 5 (optimizador de cartera: frontera eficiente de Markowitz con scipy), Fase 6 (agregador de dividendos con proyección a 12 meses). Siguiente: Fase 7 (detector de anomalías).

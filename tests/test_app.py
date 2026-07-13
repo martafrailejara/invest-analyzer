@@ -65,9 +65,9 @@ def test_get_backtester_muestra_formulario(client):
 
 
 def test_modulos_pendientes_y_404(client):
-    r = client.get("/dividendos")
+    r = client.get("/anomalias")
     assert r.status_code == 200
-    assert "Fase 6" in r.get_data(as_text=True)
+    assert "Fase 7" in r.get_data(as_text=True)
     assert client.get("/no-existe").status_code == 404
 
 

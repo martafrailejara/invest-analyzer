@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Dividendos · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Agregador de dividendos</h1>
+  <p>Lo que ha repartido cada posición de la cartera, año a año, y la proyección simple de los próximos 12 meses (último año de dividendos por acción × unidades actuales).</p>
+</div>
+
+<p class="cartera-toggle">
+  Cartera:
+  {% if ejemplo %}
+  <span aria-current="true">de ejemplo (activos de distribución)</span> ·
+  <a href="{{ url_for('dividends.page') }}">ver la mía</a>
+  {% else %}
+  <span aria-current="true">la mía (data/transacciones.csv)</span> ·
+  <a href="{{ url_for('dividends.page', cartera='ejemplo') }}">ver cartera de ejemplo</a>
+  {% endif %}
+</p>
+
+{% if sin_csv %}
+<section class="vacio">
+  <p>No hay export de transacciones en <code>data/transacciones.csv</code>.<br>
+  Guarda ahí tu export de Trade Republic, o mira la
+  <a href="{{ url_for('dividends.page', cartera='ejemplo') }}">cartera de ejemplo</a>.</p>
+</section>
+{% elif errores %}
+<div class="alert" role="alert">
+  <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% elif resultado %}
+<section class="resultados" aria-live="polite">
+  <div class="hero-figura">
+    <p class="etiqueta">Dividendos cobrados este año</p>
+    <p class="valor" data-countup="{{ resultado.este_anio_raw }}">{{ resultado.este_anio }}</p>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><p class="etiqueta">Cobrado total (histórico)</p><p class="valor">{{ resultado.cobrado_total }}</p></div>
+    <div class="tile"><p class="etiqueta">Proyección 12 meses</p><p class="valor">{{ resultado.proyeccion_total }}</p></div>
+    <div class="tile"><p class="etiqueta">Posiciones</p><p class="valor">{{ resultado.posiciones | length }}</p></div>
+  </div>
+
+  {% if resultado.todo_cero %}
+  <p class="notice">Tus posiciones actuales no reparten dividendos: los ETFs de acumulación (Acc)
+  los reinvierten internamente y las criptomonedas no pagan. La
+  <a href="{{ url_for('dividends.page', cartera='ejemplo') }}">cartera de ejemplo</a> muestra el
+  módulo con activos de distribución.</p>
+  {% else %}
+  <div class="grafico-card">
+    <div class="lienzo"><canvas id="grafico" role="img"
+      aria-label="Dividendos cobrados por año"></canvas></div>
+  </div>
+  {% endif %}
+
+  <table class="tabla-comp">
+    <thead>
+      <tr><th>Posición</th><th>Unidades</th><th>Cobrado total</th><th>Div./acción 12 m</th><th>Yield on cost</th><th>Proyección 12 m</th></tr>
+    </thead>
+    <tbody>
+      {% for p in resultado.posiciones %}
+      <tr>
+        <td>{{ p.ticker }} · {{ p.name }}</td>
+        <td>{{ p.shares }}</td>
+        <td>{{ p.cobrado_total }}</td>
+        <td>{{ p.dps_12m }}</td>
+        <td>{{ p.yoc }}</td>
+        <td>{{ p.proyeccion }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if resultado.sin_mapear %}
+  <p class="notice">ISINs sin mapear a yfinance (añádelos a core/isin_map.py): {{ resultado.sin_mapear | join(", ") }}</p>
+  {% endif %}
+  <p class="notice">La proyección extrapola el último año de dividendos por acción; no incorpora anuncios ni recortes futuros.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if resultado and not resultado.todo_cero %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const eur = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " €";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  new Chart(document.getElementById("grafico"), {
+    type: "bar",
+    data: {
+      labels: datos.labels,
+      datasets: [{
+        label: "Dividendos cobrados",
+        data: datos.totales,
+        backgroundColor: tok("--chart-value"),
+        maxBarThickness: 24,
+        borderRadius: 4,
+        borderSkipped: "start",
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"),
+          bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10,
+          cornerRadius: 6,
+          callbacks: { label: (c) => " " + eur(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: tok("--chart-grid") },
+          ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 } },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+                   callback: (v) => eur(v), maxTicksLimit: 6 },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

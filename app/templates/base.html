@@ -18,7 +18,7 @@
           (url_for('backtester.page'), 'Backtester'),
           (url_for('simulator.page'), 'Simulador'),
           (url_for('optimizer.page'), 'Optimizador'),
-          (url_for('pages.modulo', nombre='dividendos'), 'Dividendos'),
+          (url_for('dividends.page'), 'Dividendos'),
           (url_for('pages.modulo', nombre='anomalias'), 'Anomalías'),
         ] %}
         <a class="nav__link" href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ nombre }}</a>
@@ -42,7 +42,7 @@
         <button class="cmdk__item is-active" data-href="{{ url_for('backtester.page') }}">Backtester <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('simulator.page') }}">Simulador qué-pasaría-si <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('optimizer.page') }}">Optimizador de cartera <span class="estado">activo</span></button>
-        <button class="cmdk__item" data-href="{{ url_for('pages.modulo', nombre='dividendos') }}">Agregador de dividendos <span class="estado">fase 6</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('dividends.page') }}">Agregador de dividendos <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('pages.modulo', nombre='anomalias') }}">Detector de anomalías <span class="estado">fase 7</span></button>
       </div>
       <div class="cmdk__foot">

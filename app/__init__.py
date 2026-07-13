@@ -11,6 +11,7 @@ def create_app() -> Flask:
         return {"hoy": date.today().isoformat()}
 
     from app.backtester_web import backtester
+    from app.dividends_web import dividends
     from app.optimizer_web import optimizer
     from app.simulator_web import simulator
     from app.views import pages
@@ -19,4 +20,5 @@ def create_app() -> Flask:
     app.register_blueprint(backtester)
     app.register_blueprint(simulator)
     app.register_blueprint(optimizer)
+    app.register_blueprint(dividends)
     return app

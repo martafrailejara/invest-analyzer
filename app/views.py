@@ -5,11 +5,6 @@ from flask import Blueprint, abort, redirect, render_template, url_for
 pages = Blueprint("pages", __name__)
 
 MODULOS_PENDIENTES = {
-    "dividendos": (
-        "Agregador de dividendos",
-        "Cruzará el histórico de dividendos con las posiciones reales de la cartera para mostrar lo cobrado y proyectar el año siguiente.",
-        "Fase 6",
-    ),
     "anomalias": (
         "Detector de anomalías",
         "Marcará movimientos de precio estadísticamente inusuales (z-score y bandas de Bollinger) sobre el gráfico de cada activo.",

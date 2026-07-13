@@ -13,6 +13,10 @@ ISIN_TO_TICKER = {
     "IE00B5BMR087": "SXR8.DE",
     # Amundi IBEX 35 UCITS ETF Acc — Euronext París, EUR
     "FR0010655746": "CS1.PA",
+    # Vanguard S&P 500 UCITS ETF (Dist) — Ámsterdam, EUR (cartera de ejemplo)
+    "IE00B3XXRP09": "VUSA.AS",
+    # Telefónica — Bolsa de Madrid, EUR (cartera de ejemplo)
+    "ES0178430E18": "TEF.MC",
 }
 
 
