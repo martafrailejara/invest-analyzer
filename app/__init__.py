@@ -14,6 +14,7 @@ def create_app() -> Flask:
     from app.backtester_web import backtester
     from app.dividends_web import dividends
     from app.holdings_web import holdings
+    from app.montecarlo_web import montecarlo
     from app.optimizer_web import optimizer
     from app.simulator_web import simulator
 
@@ -21,6 +22,7 @@ def create_app() -> Flask:
     app.register_blueprint(backtester)
     app.register_blueprint(simulator)
     app.register_blueprint(optimizer)
+    app.register_blueprint(montecarlo)
     app.register_blueprint(dividends)
     app.register_blueprint(anomalies)
     return app

@@ -20,6 +20,7 @@
           (url_for('backtester.page'), 'Backtester'),
           (url_for('simulator.page'), 'Simulador'),
           (url_for('optimizer.page'), 'Optimizador'),
+          (url_for('montecarlo.page'), 'Monte Carlo'),
           (url_for('dividends.page'), 'Dividendos'),
           (url_for('anomalies.page'), 'Anomalías'),
         ] %}
@@ -45,6 +46,7 @@
         <button class="cmdk__item" data-href="{{ url_for('backtester.page') }}">Backtester <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('simulator.page') }}">Simulador qué-pasaría-si <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('optimizer.page') }}">Optimizador de cartera <span class="estado">activo</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('montecarlo.page') }}">Proyección Monte Carlo <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('dividends.page') }}">Agregador de dividendos <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('anomalies.page') }}">Detector de anomalías <span class="estado">activo</span></button>
       </div>

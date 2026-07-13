@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Monte Carlo · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Proyección Monte Carlo</h1>
+  <p>Simula miles de futuros posibles reordenando al azar los meses reales del histórico (bootstrap). Muestra el abanico de percentiles, no una predicción.</p>
+</div>
+
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Cartera y plan</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="activos">
+      {% for i in range(4) %}
+      <div class="activo-fila">
+        <div class="campo">
+          {% if loop.first %}<label for="ticker_{{ i }}">Activo (ticker) y peso %</label>{% endif %}
+          <input type="text" id="ticker_{{ i }}" name="ticker_{{ i }}"
+                 value="{{ form['ticker_' ~ i] }}" placeholder="SXR8.DE"
+                 autocomplete="off" spellcheck="false">
+        </div>
+        <div class="campo">
+          {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}
+          <input type="number" name="peso_{{ i }}" value="{{ form['peso_' ~ i] }}"
+                 placeholder="80" min="0" max="100" step="0.1"
+                 aria-label="Peso % del activo {{ i + 1 }}">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-grid">
+      <div class="campo">
+        <label for="inicial">Aportación inicial €</label>
+        <input type="number" id="inicial" name="inicial" value="{{ form['inicial'] }}" min="0" step="500">
+      </div>
+      <div class="campo">
+        <label for="mensual">Aportación mensual €</label>
+        <input type="number" id="mensual" name="mensual" value="{{ form['mensual'] }}" min="0" step="50">
+      </div>
+      <div class="campo">
+        <label for="years">Horizonte (años)</label>
+        <input type="number" id="years" name="years" value="{{ form['years'] }}" min="1" max="50" step="1">
+      </div>
+      <div class="campo">
+        <label for="start">Histórico desde</label>
+        <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
+      </div>
+      <div class="campo span-2">
+        <label for="end">Histórico hasta</label>
+        <input type="date" id="end" name="end" value="{{ form['end'] }}" max="{{ hoy }}">
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Proyectar</button>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if resultado %}
+      <div class="hero-figura">
+        <p class="etiqueta">Escenario mediano a {{ form['years'] }} años</p>
+        <p class="valor" data-countup="{{ resultado.terminal.p50_raw }}">{{ resultado.terminal.p50 }}</p>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><p class="etiqueta">Aportado total</p><p class="valor">{{ resultado.aportado }}</p></div>
+        <div class="tile"><p class="etiqueta">Pesimista (p10)</p><p class="valor">{{ resultado.terminal.p10 }}</p></div>
+        <div class="tile"><p class="etiqueta">Optimista (p90)</p><p class="valor">{{ resultado.terminal.p90 }}</p></div>
+        <div class="tile"><p class="etiqueta">Prob. de ganar</p><p class="valor">{{ resultado.prob_ganancia }}</p></div>
+        <div class="tile"><p class="etiqueta">Prob. de doblar</p><p class="valor">{{ resultado.prob_doblar }}</p></div>
+        <div class="tile"><p class="etiqueta">Simulaciones</p><p class="valor">{{ resultado.n_sims }}</p></div>
+      </div>
+
+      <div class="grafico-card">
+        <div class="lienzo"><canvas id="grafico" role="img"
+          aria-label="Abanico de percentiles del valor proyectado de la cartera"></canvas></div>
+      </div>
+      <p class="notice">Banda ancha: percentiles 10–90. Banda estrecha: 25–75. Línea: mediana.
+      Basado en {{ resultado.meses_historico }} meses de histórico; el pasado no garantiza el futuro.</p>
+
+      {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    {% else %}
+      <div class="vacio">
+        <p>Define la cartera, el plan de aportación y el horizonte, y pulsa <code>Proyectar</code>.<br>
+        Se simulan 1.000 futuros posibles a partir de los meses reales del histórico.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const eur = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // abanico: relleno entre p10-p90 y entre p25-p75, más la mediana
+  const banda = (data, fillTo, wash) => ({
+    data, borderWidth: 0, pointRadius: 0, pointHoverRadius: 0,
+    fill: fillTo, backgroundColor: wash, tension: 0.1,
+  });
+
+  new Chart(document.getElementById("grafico"), {
+    type: "line",
+    data: {
+      labels: datos.labels,
+      datasets: [
+        { label: "p90", ...banda(datos.p90, false, "transparent") },
+        { label: "Percentil 10–90", ...banda(datos.p10, "-1", tok("--chart-value-wash")) },
+        { label: "p75", ...banda(datos.p75, false, "transparent") },
+        { label: "Percentil 25–75", ...banda(datos.p25, "-1", tok("--chart-value-wash")) },
+        {
+          label: "Mediana",
+          data: datos.p50,
+          borderColor: tok("--chart-value"),
+          borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-value"),
+          pointHoverBorderColor: tok("--color-paper"), pointHoverBorderWidth: 2,
+          fill: false, tension: 0.1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: {
+          position: "top", align: "start",
+          labels: {
+            usePointStyle: true, pointStyle: "line",
+            color: tok("--color-ink-2"), font: { family: tok("--font-body"), size: 12 },
+            filter: (item) => ["Mediana", "Percentil 10–90", "Percentil 25–75"].includes(item.text),
+          },
+        },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"), bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10, cornerRadius: 6,
+          filter: (item) => !["p90", "p75"].includes(item.dataset.label),
+          callbacks: { label: (c) => " " + c.dataset.label + ": " + eur(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: tok("--chart-grid") },
+          ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+                   maxTicksLimit: 11, maxRotation: 0, autoSkip: true },
+        },
+        y: {
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+                   callback: (v) => eur(v), maxTicksLimit: 6 },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
