@@ -19,6 +19,7 @@ CSV_REAL = RAIZ / "data" / "transacciones.csv"
 
 def _prepara(res: dict) -> dict:
     curva = res["curva"]
+    meses = sorted(res["flujo_mensual"])
     return {
         "valor_total": eur(res["valor_total"]),
         "valor_total_raw": round(res["valor_total"], 2),
@@ -28,16 +29,37 @@ def _prepara(res: dict) -> dict:
         "pnl_pct": pct(res["pnl_pct"]),
         "cagr": "—" if math.isnan(res["cagr"]) else pct(res["cagr"]),
         "drawdown": pct(res["max_drawdown"]),
+        "var_dia": eur(res["variacion_dia"]),
+        "var_dia_pct": pct(res["variacion_dia_pct"]),
+        "var_dia_negativa": res["variacion_dia"] < 0,
+        "aportado_30d": eur(res["aportado_30d"]),
         "desde": res["desde"].strftime("%d-%m-%Y"),
         "chart": {
             "labels": [d.strftime("%Y-%m-%d") for d in curva["valor"].index],
             "value": [round(v, 2) for v in curva["valor"].tolist()],
             "invested": [round(v, 2) for v in curva["invertido"].tolist()],
+            "gain": [round(v, 2) for v in curva["ganancia"].tolist()],
+            "meses": [str(m) for m in meses],
+            "flujo_mes": [round(res["flujo_mensual"][m], 2) for m in meses],
         },
+        "transacciones": [
+            {
+                "fecha": t["fecha"].strftime("%d-%m-%Y"),
+                "tipo": t["tipo"],
+                "name": t["name"],
+                "shares": f"{t['shares']:.6f}".rstrip("0").rstrip(".").replace(".", ","),
+                "price": eur(t["price"]),
+                "caja": eur(t["caja"]),
+                "salida": t["caja"] < 0,
+            }
+            for t in res["transacciones"]
+        ],
         "posiciones": [
             {
                 "ticker": p["ticker"],
                 "name": p["name"],
+                "var_dia": pct(p["var_dia"]),
+                "var_dia_negativa": p["var_dia"] < 0,
                 "shares": f"{p['shares']:.6f}".rstrip("0").rstrip(".").replace(".", ","),
                 "avg_cost": eur(p["avg_cost"]),
                 "precio": eur(p["precio_actual"]),

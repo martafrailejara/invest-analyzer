@@ -56,6 +56,29 @@ def test_curva_termina_en_el_valor_total(tmp_path, isin_de_prueba):
     assert res["curva"]["valor"].iloc[0] > 0
 
 
+def test_ganancia_y_flujos_mensuales(tmp_path, isin_de_prueba):
+    """La ganancia aísla la parte de la curva que no es aportación, y el flujo
+    mensual refleja las compras (ene 101, mar 200+10001) y la venta (may −109)."""
+    res = holdings.run(SINTETICO, cache_dir=tmp_path, downloader=downloader_constante)
+
+    assert res["curva"]["ganancia"].iloc[-1] == pytest.approx(res["pnl_total"])
+    assert res["flujo_mensual"]["2025-01"] == pytest.approx(101.0)
+    assert res["flujo_mensual"]["2025-03"] == pytest.approx(10201.0)
+    assert res["flujo_mensual"]["2025-05"] == pytest.approx(-109.0)
+
+    # precios constantes: sin variación diaria; fixture antiguo: sin aportes recientes
+    assert res["variacion_dia"] == pytest.approx(0.0)
+    assert res["aportado_30d"] == pytest.approx(0.0)
+    for p in res["posiciones"]:
+        assert p["var_dia"] == pytest.approx(0.0)
+
+    # historial de transacciones: 4 de trading, la más reciente primero
+    assert len(res["transacciones"]) == 4
+    assert res["transacciones"][0]["tipo"] == "Venta"
+    assert res["transacciones"][0]["caja"] == pytest.approx(109.0)
+    assert res["transacciones"][-1]["caja"] == pytest.approx(-101.0)
+
+
 def test_sin_posiciones_mapeadas(tmp_path, monkeypatch):
     monkeypatch.delitem(isin_map.ISIN_TO_TICKER, "XX0000000001", raising=False)
 

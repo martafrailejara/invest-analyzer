@@ -221,6 +221,13 @@ a { color: inherit; }
   .cartera-cabecera { grid-template-columns: minmax(0, 1fr); }
 }
 
+.graficos-fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); }
+.grafico-card .panel__title { margin-bottom: var(--space-xs); }
+.lienzo--mini { height: 12rem !important; }
+@media (max-width: 60rem) {
+  .graficos-fila { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* selector de cartera (dividendos) */
 .cartera-toggle { font-size: var(--text-sm); color: var(--color-muted); margin-bottom: var(--space-lg); }
 .cartera-toggle span[aria-current] { color: var(--color-ink); font-weight: 500; }

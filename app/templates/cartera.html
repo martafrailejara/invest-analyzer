@@ -25,6 +25,8 @@
     <div class="tiles tiles--cartera">
       <div class="tile"><p class="etiqueta">Aportado neto</p><p class="valor">{{ resultado.aportado }}</p></div>
       <div class="tile"><p class="etiqueta">Ganancia</p><p class="valor {% if resultado.pnl_negativo %}negativo{% endif %}">{{ resultado.pnl }} · {{ resultado.pnl_pct }}</p></div>
+      <div class="tile"><p class="etiqueta">Última sesión</p><p class="valor {% if resultado.var_dia_negativa %}negativo{% endif %}">{{ resultado.var_dia }} · {{ resultado.var_dia_pct }}</p></div>
+      <div class="tile"><p class="etiqueta">Aportado últimos 30 días</p><p class="valor">{{ resultado.aportado_30d }}</p></div>
       <div class="tile"><p class="etiqueta">CAGR (TWR) desde {{ resultado.desde }}</p><p class="valor">{{ resultado.cagr }}</p></div>
       <div class="tile"><p class="etiqueta">Máx. drawdown</p><p class="valor negativo">{{ resultado.drawdown }}</p></div>
     </div>
@@ -35,9 +37,22 @@
       aria-label="Evolución del valor de la cartera frente al aportado neto"></canvas></div>
   </div>
 
+  <div class="graficos-fila">
+    <div class="grafico-card">
+      <p class="panel__title">Ganancia acumulada — mercado, sin aportaciones</p>
+      <div class="lienzo lienzo--mini"><canvas id="grafico-ganancia" role="img"
+        aria-label="Ganancia acumulada: valor menos aportado a lo largo del tiempo"></canvas></div>
+    </div>
+    <div class="grafico-card">
+      <p class="panel__title">Flujo neto por mes — tu plan de aportación</p>
+      <div class="lienzo lienzo--mini"><canvas id="grafico-flujo" role="img"
+        aria-label="Aportaciones netas por mes"></canvas></div>
+    </div>
+  </div>
+
   <table class="tabla-comp">
     <thead>
-      <tr><th>Posición</th><th>Unidades</th><th>Coste medio</th><th>Último cierre</th><th>Valor</th><th>P&amp;L</th><th>Peso</th></tr>
+      <tr><th>Posición</th><th>Unidades</th><th>Coste medio</th><th>Último cierre</th><th>Sesión</th><th>Valor</th><th>P&amp;L</th><th>Peso</th></tr>
     </thead>
     <tbody>
       {% for p in resultado.posiciones %}
@@ -46,6 +61,7 @@
         <td>{{ p.shares }}</td>
         <td>{{ p.avg_cost }}</td>
         <td>{{ p.precio }}</td>
+        <td {% if p.var_dia_negativa %}class="negativo"{% endif %}>{{ p.var_dia }}</td>
         <td>{{ p.valor }}</td>
         <td {% if p.pnl_negativo %}class="negativo"{% endif %}>{{ p.pnl }} · {{ p.pnl_pct }}</td>
         <td>{{ p.peso }}</td>
@@ -53,6 +69,19 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <details class="tabla-anual">
+    <summary>Historial de transacciones ({{ resultado.transacciones | length }})</summary>
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Activo</th><th>Unidades</th><th>Precio</th><th>Caja</th></tr></thead>
+      <tbody>
+        {% for t in resultado.transacciones %}
+        <tr><td>{{ t.fecha }}</td><td>{{ t.tipo }}</td><td>{{ t.name }}</td><td>{{ t.shares }}</td><td>{{ t.price }}</td>
+        <td {% if t.salida %}class="negativo"{% endif %}>{{ t.caja }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
 
   {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
 </section>
@@ -175,6 +204,78 @@
           },
         },
       },
+    },
+  });
+
+  const ejes = (formato) => ({
+    x: {
+      grid: { display: false },
+      border: { color: tok("--chart-grid") },
+      ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+               maxTicksLimit: 6, maxRotation: 0, autoSkip: true },
+    },
+    y: {
+      grid: { color: tok("--chart-grid") },
+      border: { display: false },
+      ticks: { color: tok("--color-muted"), font: { family: tok("--font-mono"), size: 10 },
+               callback: formato, maxTicksLimit: 5 },
+    },
+  });
+  const sinLeyenda = {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: tok("--color-graphite"),
+      titleColor: tok("--color-on-dark"),
+      bodyColor: tok("--color-on-dark"),
+      titleFont: { family: tok("--font-mono"), size: 11 },
+      bodyFont: { family: tok("--font-body"), size: 12 },
+      padding: 10, cornerRadius: 6,
+      callbacks: { label: (c) => " " + c.parsed.y.toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " €" },
+    },
+  };
+
+  new Chart(document.getElementById("grafico-ganancia"), {
+    type: "line",
+    data: {
+      labels: datos.labels,
+      datasets: [{
+        data: datos.gain,
+        borderColor: tok("--chart-esc-b"),
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: tok("--chart-esc-b"),
+        pointHoverBorderColor: tok("--color-paper"),
+        pointHoverBorderWidth: 2,
+        borderJoinStyle: "round",
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: sinLeyenda,
+      scales: ejes((v) => v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €"),
+    },
+  });
+
+  new Chart(document.getElementById("grafico-flujo"), {
+    type: "bar",
+    data: {
+      labels: datos.meses,
+      datasets: [{
+        data: datos.flujo_mes,
+        backgroundColor: tok("--chart-value"),
+        maxBarThickness: 24,
+        borderRadius: 4,
+        borderSkipped: "start",
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      plugins: sinLeyenda,
+      scales: ejes((v) => v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €"),
     },
   });
 })();

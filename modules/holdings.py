@@ -59,13 +59,27 @@ def run(csv_path, *, cache_dir=None, downloader=None) -> dict:
     retornos = ((valor - flujo) / valor.shift(1) - 1).iloc[1:].dropna()
     indice_twr = (1 + retornos).cumprod()
 
+    ganancia = valor - invertido  # la parte de la curva que NO es aportación
+    flujo_mensual = {
+        str(periodo): float(importe)
+        for periodo, importe in flujo.groupby(flujo.index.to_period("M")).sum().items()
+        if abs(importe) > 1e-9
+    }
+    hoy = px.index.max()
+    aportado_30d = float(flujo[flujo.index > hoy - pd.Timedelta(days=30)].sum())
+    variacion_dia = float(valor.iloc[-1] - valor.iloc[-2]) if len(valor) > 1 else 0.0
+    variacion_dia_pct = variacion_dia / float(valor.iloc[-2]) if len(valor) > 1 and valor.iloc[-2] else 0.0
+
     posiciones = []
     valor_total = float(valor.iloc[-1])
     for _, fila in mapeadas.iterrows():
-        precio_actual = float(px[fila["yf_ticker"]].iloc[-1])
+        serie_px = px[fila["yf_ticker"]]
+        precio_actual = float(serie_px.iloc[-1])
+        var_dia = (precio_actual / float(serie_px.iloc[-2]) - 1) if len(serie_px) > 1 else 0.0
         valor_actual = float(fila["shares"]) * precio_actual
         pnl = valor_actual - float(fila["cost_total"])
         posiciones.append({
+            "var_dia": var_dia,
             "symbol": fila["symbol"],
             "name": fila["name"],
             "ticker": fila["yf_ticker"],
@@ -79,6 +93,17 @@ def run(csv_path, *, cache_dir=None, downloader=None) -> dict:
         })
 
     aportado = float(invertido.iloc[-1])
+    transacciones = [
+        {
+            "fecha": fechas_tx[i],
+            "tipo": "Compra" if txs.loc[i, "type"] == "BUY" else "Venta",
+            "name": txs.loc[i, "name"],
+            "shares": float(txs.loc[i, "shares"]),
+            "price": float(txs.loc[i, "price"]),
+            "caja": float(txs.loc[i, "amount"] + txs.loc[i, "fee"]),
+        }
+        for i in reversed(txs.index)
+    ]
     return {
         "posiciones": sorted(posiciones, key=lambda p: -p["valor"]),
         "valor_total": valor_total,
@@ -87,7 +112,12 @@ def run(csv_path, *, cache_dir=None, downloader=None) -> dict:
         "pnl_pct": (valor_total - aportado) / aportado if aportado else 0.0,
         "cagr": float(metrics.cagr(indice_twr)) if len(indice_twr) > 1 else float("nan"),
         "max_drawdown": float(metrics.max_drawdown(indice_twr)) if len(indice_twr) else 0.0,
-        "curva": {"valor": valor, "invertido": invertido},
+        "variacion_dia": variacion_dia,
+        "variacion_dia_pct": variacion_dia_pct,
+        "aportado_30d": aportado_30d,
+        "flujo_mensual": flujo_mensual,
+        "curva": {"valor": valor, "invertido": invertido, "ganancia": ganancia},
+        "transacciones": transacciones,
         "desde": inicio,
         "sin_mapear": sin_mapear,
     }
