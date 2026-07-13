@@ -213,6 +213,14 @@ a { color: inherit; }
          padding: var(--space-2xl) var(--space-lg); text-align: center; color: var(--color-muted); }
 .vacio code { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-ink-2); }
 
+/* cabecera de Mi cartera: cifra héroe + tiles en la misma banda */
+.cartera-cabecera { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+                    gap: var(--space-xl); align-items: end; }
+.tiles--cartera { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 60rem) {
+  .cartera-cabecera { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* selector de cartera (dividendos) */
 .cartera-toggle { font-size: var(--text-sm); color: var(--color-muted); margin-bottom: var(--space-lg); }
 .cartera-toggle span[aria-current] { color: var(--color-ink); font-weight: 500; }

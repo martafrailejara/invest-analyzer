@@ -12,9 +12,10 @@
 <body>
   <header class="nav">
     <div class="nav__inner">
-      <a class="nav__brand" href="{{ url_for('backtester.page') }}">invest-analyzer</a>
+      <a class="nav__brand" href="{{ url_for('holdings.page') }}">invest-analyzer</a>
       <nav class="nav__links" aria-label="Módulos">
         {% for url, nombre in [
+          (url_for('holdings.page'), 'Mi cartera'),
           (url_for('backtester.page'), 'Backtester'),
           (url_for('simulator.page'), 'Simulador'),
           (url_for('optimizer.page'), 'Optimizador'),
@@ -39,7 +40,8 @@
         <kbd>esc</kbd>
       </div>
       <div class="cmdk__results">
-        <button class="cmdk__item is-active" data-href="{{ url_for('backtester.page') }}">Backtester <span class="estado">activo</span></button>
+        <button class="cmdk__item is-active" data-href="{{ url_for('holdings.page') }}">Mi cartera <span class="estado">portada</span></button>
+        <button class="cmdk__item" data-href="{{ url_for('backtester.page') }}">Backtester <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('simulator.page') }}">Simulador qué-pasaría-si <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('optimizer.page') }}">Optimizador de cartera <span class="estado">activo</span></button>
         <button class="cmdk__item" data-href="{{ url_for('dividends.page') }}">Agregador de dividendos <span class="estado">activo</span></button>

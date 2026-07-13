@@ -50,10 +50,14 @@ FORM_VALIDO = {
 }
 
 
-def test_index_redirige_al_backtester(client):
+def test_index_es_mi_cartera(client, monkeypatch):
+    # sin depender del CSV real ni de la red
+    from app import holdings_web
+
+    monkeypatch.setattr(holdings_web, "CSV_REAL", holdings_web.RAIZ / "no-existe.csv")
     r = client.get("/")
-    assert r.status_code == 302
-    assert "/backtester" in r.headers["Location"]
+    assert r.status_code == 200
+    assert "Mi cartera" in r.get_data(as_text=True)
 
 
 def test_get_backtester_muestra_formulario(client):

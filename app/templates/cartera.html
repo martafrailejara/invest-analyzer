@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Mi cartera · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Mi cartera</h1>
+  <p>Las posiciones del export de Trade Republic valoradas al último cierre, con la evolución frente a lo aportado.</p>
+</div>
+
+{% if sin_csv %}
+<section class="vacio">
+  <p>No hay export de transacciones en <code>data/transacciones.csv</code>.<br>
+  Descarga tu histórico desde Trade Republic y guárdalo ahí; esta portada se construye sola.</p>
+</section>
+{% elif errores %}
+<div class="alert" role="alert">
+  <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% elif resultado %}
+<section class="resultados" aria-live="polite">
+  <div class="cartera-cabecera">
+    <div class="hero-figura">
+      <p class="etiqueta">Valor de la cartera</p>
+      <p class="valor" data-countup="{{ resultado.valor_total_raw }}">{{ resultado.valor_total }}</p>
+    </div>
+    <div class="tiles tiles--cartera">
+      <div class="tile"><p class="etiqueta">Aportado neto</p><p class="valor">{{ resultado.aportado }}</p></div>
+      <div class="tile"><p class="etiqueta">Ganancia</p><p class="valor {% if resultado.pnl_negativo %}negativo{% endif %}">{{ resultado.pnl }} · {{ resultado.pnl_pct }}</p></div>
+      <div class="tile"><p class="etiqueta">CAGR (TWR) desde {{ resultado.desde }}</p><p class="valor">{{ resultado.cagr }}</p></div>
+      <div class="tile"><p class="etiqueta">Máx. drawdown</p><p class="valor negativo">{{ resultado.drawdown }}</p></div>
+    </div>
+  </div>
+
+  <div class="grafico-card">
+    <div class="lienzo"><canvas id="grafico" role="img"
+      aria-label="Evolución del valor de la cartera frente al aportado neto"></canvas></div>
+  </div>
+
+  <table class="tabla-comp">
+    <thead>
+      <tr><th>Posición</th><th>Unidades</th><th>Coste medio</th><th>Último cierre</th><th>Valor</th><th>P&amp;L</th><th>Peso</th></tr>
+    </thead>
+    <tbody>
+      {% for p in resultado.posiciones %}
+      <tr>
+        <td>{{ p.ticker }} · {{ p.name }}</td>
+        <td>{{ p.shares }}</td>
+        <td>{{ p.avg_cost }}</td>
+        <td>{{ p.precio }}</td>
+        <td>{{ p.valor }}</td>
+        <td {% if p.pnl_negativo %}class="negativo"{% endif %}>{{ p.pnl }} · {{ p.pnl_pct }}</td>
+        <td>{{ p.peso }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const eur = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) + " €";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const crosshair = {
+    id: "crosshair",
+    afterDraw(chart) {
+      const activos = chart.tooltip.getActiveElements();
+      if (!activos.length) return;
+      const x = activos[0].element.x;
+      const { top, bottom } = chart.chartArea;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = tok("--color-rule-2");
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
+  new Chart(document.getElementById("grafico"), {
+    type: "line",
+    plugins: [crosshair],
+    data: {
+      labels: datos.labels,
+      datasets: [
+        {
+          label: "Valor de la cartera",
+          data: datos.value,
+          borderColor: tok("--chart-value"),
+          backgroundColor: tok("--chart-value-wash"),
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-value"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          borderJoinStyle: "round",
+        },
+        {
+          label: "Aportado neto",
+          data: datos.invested,
+          borderColor: tok("--chart-invested"),
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-invested"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          stepped: "before",
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: {
+          position: "top",
+          align: "start",
+          labels: {
+            usePointStyle: true, pointStyle: "line",
+            color: tok("--color-ink-2"),
+            font: { family: tok("--font-body"), size: 12 },
+          },
+        },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"),
+          bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10,
+          cornerRadius: 6,
+          usePointStyle: true,
+          boxPadding: 4,
+          callbacks: { label: (c) => " " + c.dataset.label + ": " + eur(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: tok("--chart-grid") },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            maxTicksLimit: 8, maxRotation: 0, autoSkip: true,
+          },
+        },
+        y: {
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            callback: (v) => eur(v),
+            maxTicksLimit: 6,
+          },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -13,11 +13,11 @@ def create_app() -> Flask:
     from app.anomalies_web import anomalies
     from app.backtester_web import backtester
     from app.dividends_web import dividends
+    from app.holdings_web import holdings
     from app.optimizer_web import optimizer
     from app.simulator_web import simulator
-    from app.views import pages
 
-    app.register_blueprint(pages)
+    app.register_blueprint(holdings)
     app.register_blueprint(backtester)
     app.register_blueprint(simulator)
     app.register_blueprint(optimizer)
