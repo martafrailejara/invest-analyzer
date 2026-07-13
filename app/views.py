@@ -1,26 +1,10 @@
-"""Rutas generales: portada y páginas de los módulos aún no implementados."""
+"""Rutas generales: la portada redirige al primer módulo."""
 
-from flask import Blueprint, abort, redirect, render_template, url_for
+from flask import Blueprint, redirect, url_for
 
 pages = Blueprint("pages", __name__)
-
-MODULOS_PENDIENTES = {
-    "anomalias": (
-        "Detector de anomalías",
-        "Marcará movimientos de precio estadísticamente inusuales (z-score y bandas de Bollinger) sobre el gráfico de cada activo.",
-        "Fase 7",
-    ),
-}
 
 
 @pages.route("/")
 def index():
     return redirect(url_for("backtester.page"))
-
-
-@pages.route("/<nombre>")
-def modulo(nombre: str):
-    if nombre not in MODULOS_PENDIENTES:
-        abort(404)
-    titulo, descripcion, fase = MODULOS_PENDIENTES[nombre]
-    return render_template("pendiente.html", titulo=titulo, descripcion=descripcion, fase=fase)

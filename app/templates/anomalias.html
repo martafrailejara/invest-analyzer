@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Anomalías · invest-analyzer{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Detector de anomalías</h1>
+  <p>Días en los que el retorno se aleja del comportamiento reciente del activo: z-score del retorno diario contra la ventana móvil previa, con bandas de Bollinger de referencia.</p>
+</div>
+
+<div class="workbench">
+  <form class="panel" method="post" id="form-backtest" novalidate>
+    <p class="panel__title">Parámetros</p>
+
+    {% if errores %}
+    <div class="alert" role="alert">
+      <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <div class="form-grid">
+      <div class="campo span-2">
+        <label for="ticker">Activo (ticker yfinance)</label>
+        <input type="text" id="ticker" name="ticker" value="{{ form['ticker'] }}"
+               placeholder="SXR8.DE" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="campo">
+        <label for="start">Desde</label>
+        <input type="date" id="start" name="start" value="{{ form['start'] }}" max="{{ hoy }}">
+      </div>
+      <div class="campo">
+        <label for="end">Hasta</label>
+        <input type="date" id="end" name="end" value="{{ form['end'] }}" max="{{ hoy }}">
+      </div>
+      <div class="campo">
+        <label for="window">Ventana (sesiones)</label>
+        <input type="number" id="window" name="window" value="{{ form['window'] }}" min="10" step="5">
+      </div>
+      <div class="campo">
+        <label for="threshold">Umbral (desviaciones)</label>
+        <input type="text" inputmode="decimal" id="threshold" name="threshold" value="{{ form['threshold'] }}">
+        <p class="ayuda">|z| &gt; umbral marca el día como anómalo.</p>
+      </div>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Detectar anomalías</button>
+  </form>
+
+  <section class="resultados" aria-live="polite">
+    {% if resultado %}
+      <div class="tiles">
+        <div class="tile"><p class="etiqueta">Días anómalos</p><p class="valor">{{ resultado.n_eventos }}</p></div>
+        <div class="tile"><p class="etiqueta">Sesiones evaluadas</p><p class="valor">{{ resultado.dias_evaluados }}</p></div>
+        <div class="tile"><p class="etiqueta">Tasa de anomalías</p><p class="valor">{{ resultado.tasa }}</p></div>
+      </div>
+
+      <div class="grafico-card">
+        <div class="lienzo"><canvas id="grafico" role="img"
+          aria-label="Precio con los días anómalos marcados y bandas de Bollinger"></canvas></div>
+      </div>
+      <p class="notice">Ventana de {{ resultado.window }} sesiones, umbral de {{ resultado.threshold }} desviaciones.
+      Las bandas sombreadas son Bollinger (media ± 2σ, 20 sesiones), solo referencia visual.</p>
+
+      {% if resultado.eventos %}
+      <details class="tabla-anual" open>
+        <summary>Los {{ resultado.n_eventos }} eventos detectados</summary>
+        <table>
+          <thead><tr><th>Fecha</th><th>Retorno</th><th>z-score</th><th>Cierre</th></tr></thead>
+          <tbody>
+            {% for e in resultado.eventos %}
+            <tr><td>{{ e.fecha }}</td><td>{{ e.retorno }}</td><td>{{ e.z }}</td><td>{{ e.precio }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+      {% else %}
+      <p class="notice">Ningún día supera el umbral en este rango.</p>
+      {% endif %}
+
+      {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+    {% else %}
+      <div class="vacio">
+        <p>Elige activo, rango y umbral, y pulsa <code>Detectar anomalías</code>.<br>
+        Con el ejemplo cargado (S&amp;P 500 desde 2019) verás el crash de COVID de marzo de 2020.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script type="application/json" id="datos-grafico">{{ resultado.chart | tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+  const css = getComputedStyle(document.documentElement);
+  const tok = (n) => css.getPropertyValue(n).trim();
+  const eur = (v) => v.toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " €";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const crosshair = {
+    id: "crosshair",
+    afterDraw(chart) {
+      const activos = chart.tooltip.getActiveElements();
+      if (!activos.length) return;
+      const x = activos[0].element.x;
+      const { top, bottom } = chart.chartArea;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = tok("--color-rule-2");
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
+  new Chart(document.getElementById("grafico"), {
+    type: "line",
+    plugins: [crosshair],
+    data: {
+      labels: datos.labels,
+      datasets: [
+        {
+          label: "Precio",
+          data: datos.precio,
+          borderColor: tok("--chart-value"),
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: tok("--chart-value"),
+          pointHoverBorderColor: tok("--color-paper"),
+          pointHoverBorderWidth: 2,
+          borderJoinStyle: "round",
+          order: 1,
+        },
+        {
+          label: "Día anómalo",
+          data: datos.anomalias,
+          showLine: false,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: tok("--chart-activos"),
+          pointBorderColor: tok("--color-paper"),
+          pointBorderWidth: 2,
+          order: 0,
+        },
+        {
+          label: "Banda superior",
+          data: datos.banda_sup,
+          borderColor: tok("--color-rule-2"),
+          borderWidth: 1,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: "+1",
+          backgroundColor: tok("--chart-value-wash"),
+          order: 2,
+        },
+        {
+          label: "Banda inferior",
+          data: datos.banda_inf,
+          borderColor: tok("--color-rule-2"),
+          borderWidth: 1,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+          order: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 400, easing: "easeOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: {
+          position: "top",
+          align: "start",
+          labels: {
+            usePointStyle: true,
+            color: tok("--color-ink-2"),
+            font: { family: tok("--font-body"), size: 12 },
+            filter: (item) => !item.text.startsWith("Banda"),
+          },
+        },
+        tooltip: {
+          backgroundColor: tok("--color-graphite"),
+          titleColor: tok("--color-on-dark"),
+          bodyColor: tok("--color-on-dark"),
+          titleFont: { family: tok("--font-mono"), size: 11 },
+          bodyFont: { family: tok("--font-body"), size: 12 },
+          padding: 10,
+          cornerRadius: 6,
+          usePointStyle: true,
+          boxPadding: 4,
+          filter: (item) => item.dataset.label === "Precio" || item.dataset.label === "Día anómalo",
+          callbacks: { label: (c) => " " + c.dataset.label + ": " + eur(c.parsed.y) },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: tok("--chart-grid") },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            maxTicksLimit: 8, maxRotation: 0, autoSkip: true,
+          },
+        },
+        y: {
+          grid: { color: tok("--chart-grid") },
+          border: { display: false },
+          ticks: {
+            color: tok("--color-muted"),
+            font: { family: tok("--font-mono"), size: 10 },
+            callback: (v) => eur(v),
+            maxTicksLimit: 6,
+          },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

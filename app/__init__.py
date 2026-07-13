@@ -10,6 +10,7 @@ def create_app() -> Flask:
     def _globales():
         return {"hoy": date.today().isoformat()}
 
+    from app.anomalies_web import anomalies
     from app.backtester_web import backtester
     from app.dividends_web import dividends
     from app.optimizer_web import optimizer
@@ -21,4 +22,5 @@ def create_app() -> Flask:
     app.register_blueprint(simulator)
     app.register_blueprint(optimizer)
     app.register_blueprint(dividends)
+    app.register_blueprint(anomalies)
     return app

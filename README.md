@@ -58,4 +58,12 @@ La página de dividendos lee la cartera real de `data/transacciones.csv`; como a
 
 ## Estado
 
-En construcción por fases. Completado: Fase 0 (esqueleto), Fase 1 (capa de datos: precios/dividendos con caché parquet + posiciones desde el export de Trade Republic), Fase 2 (motor de métricas y simulación + backtester, con retornos time-weighted), Fase 3 (dashboard Flask con la página del backtester funcional), Fase 4 (simulador qué-pasaría-si con 2-3 escenarios comparados), Fase 5 (optimizador de cartera: frontera eficiente de Markowitz con scipy), Fase 6 (agregador de dividendos con proyección a 12 meses). Siguiente: Fase 7 (detector de anomalías).
+Los cinco módulos están completos y funcionales:
+
+1. **Backtester** — estrategias parametrizables (buy & hold, DCA, rebalanceo) sobre precios reales, con métricas time-weighted (CAGR, volatilidad, Sharpe, máximo drawdown).
+2. **Simulador qué-pasaría-si** — 2-3 escenarios comparados lado a lado sobre el mismo motor.
+3. **Optimizador** — frontera eficiente de Markowitz (scipy, sin cortos), carteras de mínima varianza y máximo Sharpe.
+4. **Dividendos** — cobrado por año y posición cruzando ex-fechas con las transacciones, yield on cost y proyección a 12 meses.
+5. **Anomalías** — z-score sobre ventana móvil previa (sin lookahead) + bandas de Bollinger, con umbral configurable.
+
+Construido por fases (0-7) con tests en cada capa: métricas y motor verificados contra casos calculados a mano, módulos contra propiedades y casos analíticos, y las páginas Flask con motores sustituidos (sin red).

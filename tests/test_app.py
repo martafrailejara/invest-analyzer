@@ -64,10 +64,9 @@ def test_get_backtester_muestra_formulario(client):
     assert "SXR8.DE" in html  # ejemplo precargado
 
 
-def test_modulos_pendientes_y_404(client):
-    r = client.get("/anomalias")
-    assert r.status_code == 200
-    assert "Fase 7" in r.get_data(as_text=True)
+def test_todos_los_modulos_responden_y_404(client):
+    for ruta in ("/backtester", "/simulador", "/optimizador", "/dividendos", "/anomalias"):
+        assert client.get(ruta).status_code == 200, ruta
     assert client.get("/no-existe").status_code == 404
 
 
