@@ -7,8 +7,10 @@ from pathlib import Path
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+from app.form_utils import eur, pct
 from core import config
 from modules import checkup as motor
+from modules import rebalance
 
 checkup = Blueprint("checkup", __name__)
 
@@ -45,8 +47,40 @@ def page():
     except Exception:
         errores.append("No se pudieron obtener los datos de mercado. Comprueba tu conexión.")
 
+    plan = None
+    aportacion_txt = request.args.get("aportacion", "").strip()
+    aportacion_defecto = config.get("meta", {}).get("mensual", 100)
+    if resultado and objetivos:
+        try:
+            aportacion = float(aportacion_txt.replace(",", ".")) if aportacion_txt \
+                else float(aportacion_defecto)
+            res_plan = rebalance.run(CSV_REAL, objetivos, aportacion)
+            plan = {
+                "aportacion": f"{aportacion:g}".replace(".", ","),
+                "dirigida": [
+                    {"ticker": o["ticker"], "importe": eur(o["importe"]),
+                     "peso_resultante": pct(o["peso_resultante"])}
+                    for o in res_plan["dirigida"]
+                ],
+                "clasico": [
+                    {"ticker": o["ticker"], "accion": o["accion"],
+                     "importe": eur(o["importe"]),
+                     "unidades": f"{o['unidades']:.4f}".replace(".", ","),
+                     "cuota": eur(o["cuota"]) if "cuota" in o else None,
+                     "vender": o["accion"] == "vender"}
+                    for o in res_plan["clasico"]
+                ],
+                "cuota_total": eur(res_plan["cuota_total"]),
+                "hay_ventas": any(o["accion"] == "vender" for o in res_plan["clasico"]),
+            }
+        except ValueError as exc:
+            errores.append(str(exc))
+        except Exception:
+            pass  # el chequeo sigue siendo útil aunque el plan falle
+
     return render_template("chequeo.html", resultado=resultado, errores=errores,
-                           avisos=avisos, sin_csv=False)
+                           avisos=avisos, sin_csv=False, plan=plan,
+                           aportacion_form=aportacion_txt or f"{aportacion_defecto:g}")
 
 
 @checkup.route("/chequeo/objetivos", methods=["POST"])

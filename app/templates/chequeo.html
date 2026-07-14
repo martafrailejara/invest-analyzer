@@ -36,9 +36,52 @@
     </article>
     {% endif %}
 
+    {% if plan %}
+    <article class="hallazgo hallazgo--info plan-rebalanceo">
+      <p class="hallazgo__meta"><span class="hallazgo__sev">plan</span> · Rebalanceo hacia tus objetivos</p>
+
+      <form method="get" class="guardar-form" action="">
+        <input type="text" inputmode="decimal" name="aportacion" value="{{ aportacion_form }}"
+               aria-label="Próxima aportación en euros">
+        <button class="btn btn--min" type="submit">Recalcular con esta aportación</button>
+      </form>
+
+      {% if plan.dirigida %}
+      <p class="hallazgo__titulo">Solo comprando — dirige tu aportación de {{ plan.aportacion }} €</p>
+      <table class="tabla-plan">
+        <thead><tr><th>Activo</th><th>Compra</th><th>Peso resultante</th></tr></thead>
+        <tbody>
+          {% for o in plan.dirigida %}
+          <tr><td>{{ o.ticker }}</td><td>{{ o.importe }}</td><td>{{ o.peso_resultante }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="hallazgo__detalle">Converge al objetivo sin vender: sin plusvalías ni cuota fiscal.</p>
+      {% endif %}
+
+      {% if plan.clasico %}
+      <p class="hallazgo__titulo">Comprando y vendiendo — al objetivo exacto hoy</p>
+      <table class="tabla-plan">
+        <thead><tr><th>Activo</th><th>Orden</th><th>Importe</th><th>Unidades</th><th>Cuota est.</th></tr></thead>
+        <tbody>
+          {% for o in plan.clasico %}
+          <tr><td>{{ o.ticker }}</td>
+          <td {% if o.vender %}class="negativo"{% endif %}>{{ o.accion }}</td>
+          <td>{{ o.importe }}</td><td>{{ o.unidades }}</td><td>{{ o.cuota or "—" }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if plan.hay_ventas %}
+      <p class="hallazgo__detalle">Las ventas generarían una cuota fiscal estimada de
+      {{ plan.cuota_total }} (FIFO, tramos del ahorro). El modo "solo comprando" la evita.</p>
+      {% endif %}
+      {% endif %}
+    </article>
+    {% endif %}
+
     {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
     <p class="notice">Umbrales: desviación 5 pp · concentración 60 % · correlación 0,85 · eficiencia 1 pp · comisión 1 %.
-    Las reglas viven en modules/checkup.py y son ajustables.</p>
+    Las reglas viven en modules/checkup.py y son ajustables. Órdenes calculadas mecánicamente al último cierre — no es asesoramiento.</p>
   </section>
 
   <form class="panel" method="post" action="{{ url_for('checkup.objetivos') }}">

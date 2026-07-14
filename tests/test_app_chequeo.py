@@ -47,6 +47,28 @@ def test_chequeo_muestra_hallazgos(client, monkeypatch):
     assert "Pesos objetivo" in html  # el formulario está
 
 
+def test_plan_de_rebalanceo_visible_con_objetivos(client, monkeypatch):
+    from modules import rebalance
+
+    monkeypatch.setattr(checkup, "run", lambda csv, **kw: resultado_falso())
+    config.set("objetivos", {"ISIN1": 0.8, "BTC": 0.2})
+    monkeypatch.setattr(rebalance, "run", lambda csv, obj, ap, **kw: {
+        "clasico": [{"symbol": "BTC", "ticker": "BTC-EUR", "accion": "vender",
+                     "importe": 520.0, "unidades": 0.0104, "precio": 50000.0,
+                     "plusvalia": 20.0, "cuota": 3.8}],
+        "cuota_total": 3.8,
+        "dirigida": [{"symbol": "ISIN1", "ticker": "AAA.DE", "importe": 100.0,
+                      "peso_resultante": 0.345}],
+        "aportacion": ap, "valor_total": 1000.0,
+    })
+    r = client.get("/chequeo?aportacion=100")
+    html = r.get_data(as_text=True)
+    assert "Solo comprando" in html
+    assert "Comprando y vendiendo" in html
+    assert "3,80 €" in html  # cuota estimada de la venta
+    assert "no es asesoramiento" in html
+
+
 def test_guardar_objetivos_validos(client, monkeypatch):
     monkeypatch.setattr(checkup, "run", lambda csv, **kw: resultado_falso())
     r = client.post("/chequeo/objetivos", data={"obj_ISIN1": "80", "obj_BTC": "20"},
