@@ -67,8 +67,8 @@ Escala 4pt con nombres (--space-3xs … --space-3xl) en tokens.css. Solo tokens.
 
 ## What pages MUST share
 
-- Wordmark con el cuadrado de acento; navegación en rail lateral agrupado (N3)
-  con ⌘K funcional arriba; en móvil, barra superior con botón de menú.
+- Wordmark con el cuadrado de acento; barra superior con menús desplegables por
+  grupo (N11-lite) + ⌘K a la derecha; en móvil, un único menú desplegable.
 - El acento y su disciplina (≤5% del viewport).
 - Tomorrow + IBM Plex Sans + JetBrains Mono (2+1, mono = un solo rol).
 - Voz de CTA y radios (6px control / 10px tarjeta).

@@ -80,15 +80,19 @@
     requestAnimationFrame(paso);
   });
 
-  /* ---------- Menú del rail en móvil ---------- */
-  const railMenu = document.getElementById("rail-menu");
-  const rail = document.getElementById("rail");
-  if (railMenu && rail) {
-    railMenu.addEventListener("click", () => {
-      const abierto = rail.classList.toggle("is-open");
-      railMenu.setAttribute("aria-expanded", String(abierto));
+  /* ---------- Menús desplegables de la nav ---------- */
+  const menus = Array.from(document.querySelectorAll("details.menu"));
+  menus.forEach((menu) => {
+    menu.addEventListener("toggle", () => {
+      if (menu.open) menus.forEach((otro) => { if (otro !== menu) otro.open = false; });
     });
-  }
+  });
+  document.addEventListener("click", (e) => {
+    menus.forEach((menu) => { if (menu.open && !menu.contains(e.target)) menu.open = false; });
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") menus.forEach((menu) => { menu.open = false; });
+  });
 
   /* ---------- Nombre del activo al pasar el ratón ---------- */
   const catalogoEl = document.getElementById("catalogo-tickers");

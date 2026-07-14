@@ -11,17 +11,11 @@
   <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="%230076ed"/><path d="M24 68 42 48l14 12 20-24" stroke="white" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'>
 </head>
 <body>
-  <aside class="rail" id="rail">
-    <div class="rail__cabecera">
+  <header class="nav">
+    <div class="nav__inner">
       <a class="nav__brand" href="{{ url_for('landing.page') }}">invest-analyzer</a>
-      <button class="rail__menu" id="rail-menu" aria-expanded="false" aria-controls="rail-nav">Menú</button>
-    </div>
-    <button class="searchpill" id="searchpill" aria-label="Ir a módulo (⌘K)">
-      <span class="searchpill__text">Ir a módulo…</span>
-      <span class="searchpill__kbd"><kbd>⌘K</kbd></span>
-    </button>
-    <nav class="rail__nav" id="rail-nav" aria-label="Módulos">
-      {% for grupo, enlaces in [
+
+      {% set grupos_nav = [
         ('Tu dinero', [
           (url_for('holdings.page'), 'Mi cartera'),
           (url_for('checkup.page'), 'Chequeo'),
@@ -41,17 +35,44 @@
         ('Vigilar', [
           (url_for('anomalies.page'), 'Anomalías'),
         ]),
-        ('Archivo', [
-          (url_for('saved.page'), 'Guardados'),
-        ]),
       ] %}
-      <p class="rail__grupo">{{ grupo }}</p>
-      {% for url, nombre in enlaces %}
-      <a class="rail__link" href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ nombre }}</a>
-      {% endfor %}
-      {% endfor %}
-    </nav>
-  </aside>
+
+      <nav class="nav__menus" aria-label="Módulos">
+        {% for grupo, enlaces in grupos_nav %}
+        {% set activo = enlaces | selectattr(0, 'equalto', request.path) | list %}
+        <details class="menu" {% if activo %}data-activo{% endif %}>
+          <summary>{{ grupo }}</summary>
+          <div class="menu__panel">
+            {% for url, nombre in enlaces %}
+            <a class="menu__link" href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ nombre }}</a>
+            {% endfor %}
+          </div>
+        </details>
+        {% endfor %}
+        <a class="nav__suelto" href="{{ url_for('saved.page') }}"
+           {% if request.path == url_for('saved.page') %}aria-current="page"{% endif %}>Guardados</a>
+      </nav>
+
+      <details class="menu menu--movil">
+        <summary>Menú</summary>
+        <div class="menu__panel">
+          {% for grupo, enlaces in grupos_nav %}
+          <p class="menu__grupo">{{ grupo }}</p>
+          {% for url, nombre in enlaces %}
+          <a class="menu__link" href="{{ url }}" {% if request.path == url %}aria-current="page"{% endif %}>{{ nombre }}</a>
+          {% endfor %}
+          {% endfor %}
+          <p class="menu__grupo">Archivo</p>
+          <a class="menu__link" href="{{ url_for('saved.page') }}">Guardados</a>
+        </div>
+      </details>
+
+      <button class="searchpill" id="searchpill" aria-label="Ir a módulo (⌘K)">
+        <span class="searchpill__text">Ir a módulo…</span>
+        <span class="searchpill__kbd"><kbd>⌘K</kbd></span>
+      </button>
+    </div>
+  </header>
 
   <div class="cmdk" id="cmdk" aria-hidden="true">
     <div class="cmdk__backdrop"></div>
@@ -85,7 +106,6 @@
   </datalist>
   <script type="application/json" id="catalogo-tickers">{{ catalogo_tickers | tojson }}</script>
 
-  <div class="contenido">
   <main class="main">
     {% with mensajes = get_flashed_messages() %}
       {% if mensajes %}
@@ -102,7 +122,6 @@
     recomendaciones de inversión ni constituye asesoramiento financiero o fiscal ·
     {{ hoy[:4] }}</p>
   </footer>
-  </div>
 
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   {% block scripts %}{% endblock %}
