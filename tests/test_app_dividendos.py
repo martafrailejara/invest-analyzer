@@ -7,7 +7,13 @@ from modules import dividends
 
 
 @pytest.fixture()
-def client():
+def client(tmp_path, monkeypatch):
+    # el CSV real está gitignoreado: en CI no existe, así que se parchea siempre
+    from app import dividends_web
+
+    csv = tmp_path / "transacciones.csv"
+    csv.write_text("existe")  # solo se comprueba la existencia; el motor se sustituye
+    monkeypatch.setattr(dividends_web, "CSV_REAL", csv)
     app = create_app()
     app.config["TESTING"] = True
     return app.test_client()
