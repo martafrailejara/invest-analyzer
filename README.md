@@ -58,6 +58,8 @@ El dashboard navega entre los módulos con ⌘K (paleta de comandos). El diseño
 
 La página de dividendos lee la cartera real de `data/transacciones.csv`; como alternativa, `?cartera=ejemplo` usa [samples/transacciones_ejemplo.csv](samples/transacciones_ejemplo.csv) (activos de distribución, útil cuando la cartera real solo tiene ETFs de acumulación).
 
+Hay una **ficha completa de funcionalidades** — qué hace cada módulo, cómo funciona por dentro y qué significa cada métrica — en [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md).
+
 ## Estado
 
 Módulos, todos funcionales:
