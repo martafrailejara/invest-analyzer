@@ -139,7 +139,21 @@ def _cached_prices(
             start = min(start, cub_start)
             end = max(end, cub_end)
 
-    serie = fetch(ticker, start, end)
+    try:
+        serie = fetch(ticker, start, end)
+    except Exception as exc:
+        if fichero.exists():
+            # red caída pero hay caché: mejor datos de ayer con aviso que un error
+            cacheada = pd.read_parquet(fichero)[ticker]
+            warnings.warn(
+                f"No se pudo actualizar '{ticker}' ({type(exc).__name__}): usando la "
+                f"caché local, con datos hasta {cacheada.index.max().date()}"
+            )
+            return cacheada
+        raise ValueError(
+            f"No se pudieron descargar datos de '{ticker}' y no hay caché local. "
+            f"Comprueba la conexión. ({type(exc).__name__}: {exc})"
+        ) from exc
     if serie.empty:
         raise ValueError(
             f"yfinance no devolvió datos para '{ticker}' entre {start.date()} "
@@ -154,10 +168,25 @@ def _cached_prices(
     return serie
 
 
+REINTENTOS = 3
+
+
 def _yf_download_prices(ticker: str, start: pd.Timestamp, end: pd.Timestamp) -> pd.Series:
+    import time
+
     import yfinance as yf
 
-    hist = yf.Ticker(ticker).history(start=start, end=end, auto_adjust=True)
+    ultimo_error: Exception | None = None
+    for intento in range(REINTENTOS):
+        try:
+            hist = yf.Ticker(ticker).history(start=start, end=end, auto_adjust=True)
+            break
+        except Exception as exc:  # yfinance es un scraper: fallos transitorios frecuentes
+            ultimo_error = exc
+            if intento < REINTENTOS - 1:
+                time.sleep(1 + intento)
+    else:
+        raise ultimo_error  # agotados los reintentos: decide _cached_prices
     if hist.empty:
         return pd.Series(dtype="float64")
     serie = hist["Close"]

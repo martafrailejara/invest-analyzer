@@ -65,3 +65,27 @@ def test_avisa_si_los_datos_acaban_antes_del_rango(tmp_path):
     with pytest.warns(UserWarning, match="solo tiene datos hasta 2024-03-01"):
         market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-12-31",
                                cache_dir=tmp_path, downloader=datos_viejos)
+
+
+def test_red_caida_sirve_cache_con_aviso(tmp_path):
+    """Si la descarga falla pero hay caché, se sirve la caché avisando."""
+    contador = {}
+    market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-03-01",
+                           cache_dir=tmp_path, downloader=downloader_contado(contador))
+
+    def caido(ticker, start, end):
+        raise RuntimeError("red caída")
+
+    with pytest.warns(UserWarning, match="usando la caché local"):
+        px = market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-06-01",
+                                    cache_dir=tmp_path, downloader=caido)
+    assert not px["AAA.DE"].dropna().empty
+
+
+def test_red_caida_sin_cache_error_legible(tmp_path):
+    def caido(ticker, start, end):
+        raise RuntimeError("red caída")
+
+    with pytest.raises(ValueError, match="no hay caché local"):
+        market_data.get_prices(["AAA.DE"], "2024-01-01", "2024-06-01",
+                               cache_dir=tmp_path, downloader=caido)

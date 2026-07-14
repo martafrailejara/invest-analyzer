@@ -1,3 +1,4 @@
+import os
 from datetime import date
 
 from flask import Flask
@@ -5,8 +6,8 @@ from flask import Flask
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    # solo para mensajes flash de sesión; app local sin datos sensibles en sesión
-    app.secret_key = "invest-analyzer-local"
+    # solo para mensajes flash de sesión; configurable si se despliega público
+    app.secret_key = os.environ.get("SECRET_KEY", "invest-analyzer-local")
 
     from core.tickers import CATALOGO
 

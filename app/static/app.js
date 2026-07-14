@@ -93,13 +93,13 @@
     });
   }
 
-  /* ---------- Estado de carga del formulario ---------- */
-  const form = document.getElementById("form-backtest");
-  if (form) {
+  /* ---------- Estado de carga en todos los formularios ---------- */
+  document.querySelectorAll("form").forEach((form) => {
     form.addEventListener("submit", () => {
       const btn = form.querySelector("button[type=submit]");
+      if (!btn) return;
       btn.setAttribute("aria-busy", "true");
-      btn.textContent = "Ejecutando…";
+      if (btn.classList.contains("btn--primary")) btn.textContent = "Ejecutando… ";
     });
-  }
+  });
 })();
