@@ -4,4 +4,5 @@ pyarrow
 yfinance
 scipy
 scikit-learn
+flask
 pytest
