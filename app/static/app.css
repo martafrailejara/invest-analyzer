@@ -277,6 +277,20 @@ a { color: inherit; }
   .stat-strip__item:nth-child(odd) { border-left: 0; padding-left: 0; }
 }
 
+/* chequeo: rejilla de hallazgos + plan destacado */
+.hallazgos-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm); }
+.hallazgos-grid .hallazgo + .hallazgo { margin-top: 0; }
+.plan-rebalanceo { border-color: var(--color-rule-2); }
+.plan-rebalanceo .hallazgo__sev { color: var(--color-accent); }
+.plan-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg); margin-top: var(--space-sm); }
+.panel--objetivos { margin-top: var(--space-sm); max-width: 32rem; }
+.panel--objetivos .btn--primary { width: auto; }
+@media (max-width: 60rem) {
+  .hallazgos-grid, .plan-cols { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* tablas del plan de rebalanceo */
 .plan-rebalanceo .guardar-form { margin: var(--space-sm) 0 var(--space-xs); max-width: 24rem; }
 .tabla-plan { width: 100%; border-collapse: collapse; font-size: var(--text-sm);

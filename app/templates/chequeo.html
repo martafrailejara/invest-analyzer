@@ -17,8 +17,77 @@
   <ul>{% for e in errores %}<li>{{ e }}</li>{% endfor %}</ul>
 </div>
 {% elif resultado %}
-<div class="workbench">
-  <section class="resultados" aria-live="polite">
+<section class="resultados" aria-live="polite">
+
+  <div class="stat-strip">
+    <div class="stat-strip__item"><p class="etiqueta">Atención</p>
+      <p class="valor {% if resultado.resumen.atencion %}negativo{% endif %}">{{ resultado.resumen.atencion }}</p></div>
+    <div class="stat-strip__item"><p class="etiqueta">Avisos</p>
+      <p class="valor">{{ resultado.resumen.aviso }}</p></div>
+    <div class="stat-strip__item"><p class="etiqueta">Info</p>
+      <p class="valor">{{ resultado.resumen.info }}</p></div>
+    <div class="stat-strip__item"><p class="etiqueta">Correctos</p>
+      <p class="valor positivo">{{ resultado.resumen.ok }}</p></div>
+  </div>
+
+  {% if plan %}
+  <article class="hallazgo plan-rebalanceo">
+    <p class="hallazgo__meta"><span class="hallazgo__sev">tu próxima aportación</span> · Plan de rebalanceo hacia tus objetivos</p>
+
+    <form method="get" class="guardar-form" action="">
+      <input type="text" inputmode="decimal" name="aportacion" value="{{ aportacion_form }}"
+             aria-label="Próxima aportación en euros">
+      <button class="btn btn--min" type="submit">Recalcular con esta aportación</button>
+    </form>
+
+    <div class="plan-cols">
+      {% if plan.dirigida %}
+      <div>
+        <p class="hallazgo__titulo">Solo comprando — dirige tu aportación de {{ plan.aportacion }} €</p>
+        <table class="tabla-plan">
+          <thead><tr><th>Activo</th><th>Compra</th><th>Peso resultante</th></tr></thead>
+          <tbody>
+            {% for o in plan.dirigida %}
+            <tr><td>{{ o.ticker }}</td><td>{{ o.importe }}</td><td>{{ o.peso_resultante }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="hallazgo__detalle">Converge al objetivo sin vender: sin plusvalías ni cuota fiscal.</p>
+      </div>
+      {% endif %}
+
+      {% if plan.clasico %}
+      <div>
+        <p class="hallazgo__titulo">Comprando y vendiendo — al objetivo exacto hoy</p>
+        <table class="tabla-plan">
+          <thead><tr><th>Activo</th><th>Orden</th><th>Importe</th><th>Unidades</th><th>Cuota est.</th></tr></thead>
+          <tbody>
+            {% for o in plan.clasico %}
+            <tr><td>{{ o.ticker }}</td>
+            <td {% if o.vender %}class="negativo"{% endif %}>{{ o.accion }}</td>
+            <td>{{ o.importe }}</td><td>{{ o.unidades }}</td><td>{{ o.cuota or "—" }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if plan.hay_ventas %}
+        <p class="hallazgo__detalle">Las ventas generarían una cuota fiscal estimada de
+        {{ plan.cuota_total }} (FIFO, tramos del ahorro). El modo "solo comprando" la evita.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </article>
+  {% elif not tiene_objetivos %}
+  <article class="hallazgo plan-rebalanceo">
+    <p class="hallazgo__meta"><span class="hallazgo__sev">empieza aquí</span> · Plan de rebalanceo</p>
+    <p class="hallazgo__titulo">Define tus pesos objetivo para obtener el plan</p>
+    <p class="hallazgo__detalle">Con tu asignación deseada, esta sección te dirá cómo repartir tu próxima
+    aportación (sin vender ni tributar) o qué órdenes ejecutar para rebalancear hoy.
+    <a href="#objetivos">Configúralos abajo ↓</a></p>
+  </article>
+  {% endif %}
+
+  <div class="hallazgos-grid">
     {% for h in resultado.hallazgos %}
     <article class="hallazgo hallazgo--{{ h.severidad }}">
       <p class="hallazgo__meta"><span class="hallazgo__sev">{{ {'atencion': 'atención', 'aviso': 'aviso', 'info': 'info'}[h.severidad] }}</span> · {{ h.regla }}</p>
@@ -35,75 +104,34 @@
       </ul>
     </article>
     {% endif %}
+  </div>
 
-    {% if plan %}
-    <article class="hallazgo hallazgo--info plan-rebalanceo">
-      <p class="hallazgo__meta"><span class="hallazgo__sev">plan</span> · Rebalanceo hacia tus objetivos</p>
+  {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
+  <p class="notice">Umbrales: desviación 5 pp · concentración 60 % · correlación 0,85 · eficiencia 1 pp · comisión 1 %.
+  Las reglas viven en modules/checkup.py y son ajustables. Órdenes calculadas mecánicamente al último cierre — no es asesoramiento.</p>
 
-      <form method="get" class="guardar-form" action="">
-        <input type="text" inputmode="decimal" name="aportacion" value="{{ aportacion_form }}"
-               aria-label="Próxima aportación en euros">
-        <button class="btn btn--min" type="submit">Recalcular con esta aportación</button>
-      </form>
-
-      {% if plan.dirigida %}
-      <p class="hallazgo__titulo">Solo comprando — dirige tu aportación de {{ plan.aportacion }} €</p>
-      <table class="tabla-plan">
-        <thead><tr><th>Activo</th><th>Compra</th><th>Peso resultante</th></tr></thead>
-        <tbody>
-          {% for o in plan.dirigida %}
-          <tr><td>{{ o.ticker }}</td><td>{{ o.importe }}</td><td>{{ o.peso_resultante }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <p class="hallazgo__detalle">Converge al objetivo sin vender: sin plusvalías ni cuota fiscal.</p>
-      {% endif %}
-
-      {% if plan.clasico %}
-      <p class="hallazgo__titulo">Comprando y vendiendo — al objetivo exacto hoy</p>
-      <table class="tabla-plan">
-        <thead><tr><th>Activo</th><th>Orden</th><th>Importe</th><th>Unidades</th><th>Cuota est.</th></tr></thead>
-        <tbody>
-          {% for o in plan.clasico %}
-          <tr><td>{{ o.ticker }}</td>
-          <td {% if o.vender %}class="negativo"{% endif %}>{{ o.accion }}</td>
-          <td>{{ o.importe }}</td><td>{{ o.unidades }}</td><td>{{ o.cuota or "—" }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% if plan.hay_ventas %}
-      <p class="hallazgo__detalle">Las ventas generarían una cuota fiscal estimada de
-      {{ plan.cuota_total }} (FIFO, tramos del ahorro). El modo "solo comprando" la evita.</p>
-      {% endif %}
-      {% endif %}
-    </article>
-    {% endif %}
-
-    {% for aviso in avisos %}<p class="notice">{{ aviso }}</p>{% endfor %}
-    <p class="notice">Umbrales: desviación 5 pp · concentración 60 % · correlación 0,85 · eficiencia 1 pp · comisión 1 %.
-    Las reglas viven en modules/checkup.py y son ajustables. Órdenes calculadas mecánicamente al último cierre — no es asesoramiento.</p>
-  </section>
-
-  <form class="panel" method="post" action="{{ url_for('checkup.objetivos') }}">
-    <p class="panel__title">Pesos objetivo</p>
-    <p class="ayuda">Tu asignación deseada, en % (deben sumar 100). Vacío = sin objetivo.</p>
-    <div class="activos">
-      {% for p in resultado.posiciones %}
-      <div class="activo-fila">
-        <div class="campo">
-          {% if loop.first %}<label>Posición y objetivo %</label>{% endif %}
-          <input type="text" value="{{ p.ticker }} · ahora {{ p.peso_pct }} %" disabled>
+  <details class="tabla-anual" id="objetivos" {% if not tiene_objetivos %}open{% endif %}>
+    <summary>Pesos objetivo</summary>
+    <form class="panel panel--objetivos" method="post" action="{{ url_for('checkup.objetivos') }}">
+      <p class="ayuda">Tu asignación deseada, en % (deben sumar 100). Vacío = sin objetivo.</p>
+      <div class="activos">
+        {% for p in resultado.posiciones %}
+        <div class="activo-fila">
+          <div class="campo">
+            {% if loop.first %}<label>Posición y objetivo %</label>{% endif %}
+            <input type="text" value="{{ p.ticker }} · ahora {{ p.peso_pct }} %" disabled>
+          </div>
+          <div class="campo">
+            {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}
+            <input type="number" name="obj_{{ p.symbol }}" value="{{ p.objetivo_pct }}"
+                   min="0" max="100" step="1" aria-label="Peso objetivo de {{ p.ticker }}">
+          </div>
         </div>
-        <div class="campo">
-          {% if loop.first %}<label aria-hidden="true">&nbsp;</label>{% endif %}
-          <input type="number" name="obj_{{ p.symbol }}" value="{{ p.objetivo_pct }}"
-                 min="0" max="100" step="1" aria-label="Peso objetivo de {{ p.ticker }}">
-        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
-    </div>
-    <button class="btn btn--primary" type="submit">Guardar objetivos</button>
-  </form>
-</div>
+      <button class="btn btn--primary" type="submit">Guardar objetivos</button>
+    </form>
+  </details>
+</section>
 {% endif %}
 {% endblock %}

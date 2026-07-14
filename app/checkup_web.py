@@ -35,6 +35,12 @@ def page():
         resultado = {
             "hallazgos": res["hallazgos"],
             "correctos": res["correctos"],
+            "resumen": {
+                "atencion": sum(1 for h in res["hallazgos"] if h["severidad"] == "atencion"),
+                "aviso": sum(1 for h in res["hallazgos"] if h["severidad"] == "aviso"),
+                "info": sum(1 for h in res["hallazgos"] if h["severidad"] == "info"),
+                "ok": len(res["correctos"]),
+            },
             "posiciones": [
                 {"symbol": p["symbol"], "ticker": p["ticker"], "name": p["name"],
                  "peso_pct": round(p["peso"] * 100, 1),
@@ -80,6 +86,7 @@ def page():
 
     return render_template("chequeo.html", resultado=resultado, errores=errores,
                            avisos=avisos, sin_csv=False, plan=plan,
+                           tiene_objetivos=bool(objetivos),
                            aportacion_form=aportacion_txt or f"{aportacion_defecto:g}")
 
 
