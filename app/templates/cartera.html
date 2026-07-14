@@ -22,13 +22,13 @@
       <p class="etiqueta">Valor de la cartera</p>
       <p class="valor" data-countup="{{ resultado.valor_total_raw }}">{{ resultado.valor_total }}</p>
     </div>
-    <div class="tiles tiles--cartera">
-      <div class="tile"><p class="etiqueta">Aportado neto</p><p class="valor">{{ resultado.aportado }}</p></div>
-      <div class="tile"><p class="etiqueta">Ganancia</p><p class="valor {% if resultado.pnl_negativo %}negativo{% endif %}">{{ resultado.pnl }} · {{ resultado.pnl_pct }}</p></div>
-      <div class="tile"><p class="etiqueta">Última sesión</p><p class="valor {% if resultado.var_dia_negativa %}negativo{% endif %}">{{ resultado.var_dia }} · {{ resultado.var_dia_pct }}</p></div>
-      <div class="tile"><p class="etiqueta">Aportado últimos 30 días</p><p class="valor">{{ resultado.aportado_30d }}</p></div>
-      <div class="tile"><p class="etiqueta">CAGR (TWR) desde {{ resultado.desde }}</p><p class="valor">{{ resultado.cagr }}</p></div>
-      <div class="tile"><p class="etiqueta">Máx. drawdown</p><p class="valor negativo">{{ resultado.drawdown }}</p></div>
+    <div class="stat-strip">
+      <div class="stat-strip__item"><p class="etiqueta">Aportado neto</p><p class="valor">{{ resultado.aportado }}</p></div>
+      <div class="stat-strip__item"><p class="etiqueta">Ganancia</p><p class="valor {% if resultado.pnl_negativo %}negativo{% else %}positivo{% endif %}">{{ resultado.pnl }} · {{ resultado.pnl_pct }}</p></div>
+      <div class="stat-strip__item"><p class="etiqueta">Última sesión</p><p class="valor {% if resultado.var_dia_negativa %}negativo{% else %}positivo{% endif %}">{{ resultado.var_dia }} · {{ resultado.var_dia_pct }}</p></div>
+      <div class="stat-strip__item"><p class="etiqueta">Aportado 30 días</p><p class="valor">{{ resultado.aportado_30d }}</p></div>
+      <div class="stat-strip__item"><p class="etiqueta">CAGR (TWR) desde {{ resultado.desde }}</p><p class="valor">{{ resultado.cagr }}</p></div>
+      <div class="stat-strip__item"><p class="etiqueta">Máx. drawdown</p><p class="valor negativo">{{ resultado.drawdown }}</p></div>
     </div>
   </div>
 
@@ -61,9 +61,9 @@
         <td>{{ p.shares }}</td>
         <td>{{ p.avg_cost }}</td>
         <td>{{ p.precio }}</td>
-        <td {% if p.var_dia_negativa %}class="negativo"{% endif %}>{{ p.var_dia }}</td>
+        <td class="{% if p.var_dia_negativa %}negativo{% else %}positivo{% endif %}">{{ p.var_dia }}</td>
         <td>{{ p.valor }}</td>
-        <td {% if p.pnl_negativo %}class="negativo"{% endif %}>{{ p.pnl }} · {{ p.pnl_pct }}</td>
+        <td class="{% if p.pnl_negativo %}negativo{% else %}positivo{% endif %}">{{ p.pnl }} · {{ p.pnl_pct }}</td>
         <td>{{ p.peso }}</td>
       </tr>
       {% endfor %}

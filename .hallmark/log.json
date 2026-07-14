@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-07-14",
+    "scope": "app",
+    "macrostructure": "Workbench (app) / Index-First (landing)",
+    "theme": "custom Cobalt Night",
+    "theme_axes": "dark-cool / display-condensed / cool",
+    "vibe": "terminal financiera oscura, cobalto luminoso",
+    "enrichment": "none",
+    "brief": "invest-analyzer · rediseño multi-página a sistema oscuro (design.md)"
+  },
+  {
     "date": "2026-07-12",
     "macrostructure": "Workbench",
     "theme": "Cobalt",

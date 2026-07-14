@@ -6,7 +6,7 @@
   <title>{% block title %}invest-analyzer{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="%230076ed"/><path d="M24 68 42 48l14 12 20-24" stroke="white" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'>
 </head>
@@ -81,7 +81,11 @@
   </main>
 
   <footer class="foot-line">
-    <p>invest-analyzer · datos de mercado: yfinance con caché local · herramienta descriptiva — no emite recomendaciones de inversión</p>
+    <p>invest-analyzer — plataforma personal de análisis de inversión.
+    datos de mercado: yfinance con caché parquet local · cartera: export de Trade Republic ·
+    motor: pandas/numpy/scipy/scikit-learn · herramienta descriptiva — no emite
+    recomendaciones de inversión ni constituye asesoramiento financiero o fiscal ·
+    {{ hoy[:4] }}</p>
   </footer>
 
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
